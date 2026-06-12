@@ -1,0 +1,19 @@
+# deps & builds
+node_modules/
+.next/
+*.tsbuildinfo
+
+# python
+.venv/
+__pycache__/
+*.pyc
+
+# secrets & local data — never commit
+.env
+.env.*
+!.env.example
+*.db
+
+# misc
+.DS_Store
+nohup.out

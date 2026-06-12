@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #0a1120;
+  --color-panel: #121b2e;
+  --color-panel-2: #18233c;
+  --color-line: #20304e;
+  --color-accent: #2f6fed;
+  --color-accent-2: #4f8bff;
+  --color-up: #2dd178;
+  --color-down: #ff5c6c;
+  --color-gold: #f5a623;
+  --color-mut: #8295b5;
+  --color-mut-2: #5b6e90;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  background: #0a1120;
+  color-scheme: dark;
+}
+
+body {
+  background: #0a1120;
+  color: #e7eefb;
+  -webkit-font-smoothing: antialiased;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* NSE ticker marquee — track holds two copies of the list, shifts by one */
+@keyframes ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.ticker-track {
+  animation: ticker-scroll 40s linear infinite;
+}
+.ticker-track:hover {
+  animation-play-state: paused;
+}
