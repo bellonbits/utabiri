@@ -29,12 +29,15 @@ async def nse_quotes():
         return _cache["data"]
 
     try:
-        async with httpx.AsyncClient(timeout=15.0) as c:
+        # the source has AAAA records but containers often lack an IPv6
+        # route; binding to 0.0.0.0 forces IPv4
+        transport = httpx.AsyncHTTPTransport(local_address="0.0.0.0")
+        async with httpx.AsyncClient(timeout=15.0, transport=transport) as c:
             r = await c.get(SOURCE, headers={
                 "User-Agent": "Mozilla/5.0 (UtabiriBot; market data panel)",
             })
     except httpx.HTTPError as e:
-        raise HTTPException(502, f"upstream fetch failed: {e}")
+        raise HTTPException(502, f"upstream fetch failed: {e!r}")
     if r.status_code != 200:
         raise HTTPException(502, f"upstream {r.status_code}")
 
