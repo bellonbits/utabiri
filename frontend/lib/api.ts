@@ -26,9 +26,20 @@ export async function api<T>(
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(
-      typeof data?.detail === "string" ? data.detail : `HTTP ${res.status}`,
-    );
+    const d = data?.detail;
+    // FastAPI validation errors arrive as a list of {loc, msg}
+    const text =
+      typeof d === "string"
+        ? d
+        : Array.isArray(d) && d.length
+          ? d
+              .map(
+                (e: { loc?: (string | number)[]; msg?: string }) =>
+                  `${(e.loc ?? []).slice(1).join(".")}: ${e.msg}`,
+              )
+              .join("; ")
+          : `HTTP ${res.status}`;
+    throw new Error(text);
   }
   return data as T;
 }

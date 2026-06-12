@@ -107,18 +107,28 @@ export default function AdminPage() {
 
   const createMarket = () =>
     run(async () => {
+      // API requires ^[a-z0-9-]+$ — slugify whatever was typed
+      const id = mId
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
       const outcomes = mOutcomes
         .split("\n")
         .map((l) => l.trim())
         .filter(Boolean)
         .map((l) => {
-          const [label, p] = l.split(":");
-          return { label: label.trim(), initial_price: Number(p ?? 0.5) };
+          const i = l.lastIndexOf(":");
+          const label = i === -1 ? l : l.slice(0, i);
+          const n = i === -1 ? 0.5 : Number(l.slice(i + 1));
+          // accept "60" as 60% alongside "0.6"
+          const price = !Number.isFinite(n) || n <= 0 ? 0.5 : n > 1 ? n / 100 : n;
+          return { label: label.trim(), initial_price: Math.min(price, 0.99) };
         });
       await api("/admin/markets", {
         method: "POST",
         body: {
-          id: mId,
+          id,
           question: mQuestion,
           category: mCategory,
           kind: outcomes.length > 1 ? "multi" : "binary",
@@ -126,7 +136,7 @@ export default function AdminPage() {
           outcomes,
         },
       });
-      return `Market "${mId}" created`;
+      return `Market "${id}" created`;
     });
 
   const resolve = () =>
