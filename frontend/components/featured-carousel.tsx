@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { api, type ApiMarket } from "@/lib/api";
-import { markets as staticMarkets } from "@/lib/data";
+import { fmtEndDate, marketImage } from "@/lib/live";
 import { SERIES_COLORS, seededSeries } from "@/lib/series";
 import { CarouselNews } from "@/components/news-feed";
 import { PriceChart, type ChartSeries } from "@/components/price-chart";
@@ -40,25 +40,8 @@ export function FeaturedCarousel() {
     return () => clearInterval(t);
   }, []);
 
-  // feature the top markets by volume (live), fall back to static order
-  const featured = useMemo(() => {
-    const base = live.length
-      ? live
-      : staticMarkets.map((m) => ({
-          id: m.id,
-          question: m.question,
-          category: m.category ?? "Markets",
-          volume_cents: 0,
-          status: "open",
-          outcomes:
-            m.kind === "binary"
-              ? [{ id: m.id, label: "Yes", price_yes: (m.yes ?? 50) / 100, price_no: 0 }]
-              : m.kind === "matchup"
-                ? m.teams!.map((t) => ({ id: t.abbr, label: t.name, price_yes: t.pct / 100, price_no: 0 }))
-                : m.outcomes!.map((o) => ({ id: o.label, label: o.label, price_yes: o.yes / 100, price_no: 0 })),
-        }));
-    return base.slice(0, 6);
-  }, [live]);
+  // feature the top markets by volume
+  const featured = useMemo(() => live.slice(0, 6), [live]);
 
   // autoplay
   useEffect(() => {
@@ -69,7 +52,7 @@ export function FeaturedCarousel() {
 
   if (featured.length === 0) return null;
   const m = featured[idx % featured.length];
-  const img = staticMarkets.find((s) => s.id === m.id)?.image;
+  const img = marketImage(m);
   const prev = featured[(idx - 1 + featured.length) % featured.length];
   const next = featured[(idx + 1) % featured.length];
 
@@ -142,7 +125,7 @@ export function FeaturedCarousel() {
             <div className="pt-3 text-xs text-mut-2">
               <span className="flex items-center gap-1.5">
                 <PulseIcon width={13} height={13} /> {fmtVol(m.volume_cents)}
-                <span>· Ends Dec 31, 2026</span>
+                <span>· Ends {fmtEndDate(m.end_date)}</span>
               </span>
             </div>
           </div>

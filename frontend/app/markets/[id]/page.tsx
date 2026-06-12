@@ -9,39 +9,12 @@ import {
   type TradeMarketDto,
   type TradeOutcome,
 } from "@/components/trade-view";
-import { markets, type Market } from "@/lib/data";
+import type { ApiMarket } from "@/lib/api";
+import { fmtEndDate, fmtVolCents, marketImage, serverApiUrl } from "@/lib/live";
 import { SERIES_COLORS, seededSeries } from "@/lib/series";
 
-export function generateStaticParams() {
-  return markets.map((m) => ({ id: m.id }));
-}
-
-function outcomesOf(m: Market): TradeOutcome[] {
-  if (m.kind === "binary") {
-    return [
-      {
-        label: m.question.length > 28 ? "Yes" : m.question,
-        pct: m.yes ?? 50,
-        vol: m.volume,
-        color: SERIES_COLORS[0],
-      },
-    ];
-  }
-  if (m.kind === "matchup") {
-    return m.teams!.map((t, i) => ({
-      label: t.name,
-      pct: t.pct,
-      vol: m.volume,
-      color: SERIES_COLORS[i % SERIES_COLORS.length],
-    }));
-  }
-  return m.outcomes!.map((o, i) => ({
-    label: o.label,
-    pct: o.yes,
-    vol: m.volume,
-    color: SERIES_COLORS[i % SERIES_COLORS.length],
-  }));
-}
+// markets are created at runtime via /admin — always render fresh
+export const dynamic = "force-dynamic";
 
 export default async function MarketPage({
   params,
@@ -49,10 +22,19 @@ export default async function MarketPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const market = markets.find((m) => m.id === id);
-  if (!market) notFound();
+  const res = await fetch(`${serverApiUrl()}/markets/${id}`, {
+    cache: "no-store",
+  }).catch(() => null);
+  if (!res || res.status === 404) notFound();
+  if (!res.ok) throw new Error(`market fetch failed: ${res.status}`);
+  const market: ApiMarket = await res.json();
 
-  const outcomes = outcomesOf(market);
+  const outcomes: TradeOutcome[] = market.outcomes.map((o, i) => ({
+    label: o.label,
+    pct: Math.round(o.price_yes * 100),
+    vol: fmtVolCents(market.volume_cents),
+    color: SERIES_COLORS[i % SERIES_COLORS.length],
+  }));
   const series: ChartSeries[] = outcomes.map((o) => ({
     label: o.label,
     pct: o.pct,
@@ -63,10 +45,10 @@ export default async function MarketPage({
   const dto: TradeMarketDto = {
     id: market.id,
     question: market.question,
-    image: market.image,
-    category: market.category ?? "Markets",
-    volume: market.volume,
-    endDate: "Dec 31, 2026",
+    image: marketImage(market),
+    category: market.category || "Markets",
+    volume: fmtVolCents(market.volume_cents),
+    endDate: fmtEndDate(market.end_date),
   };
 
   return (

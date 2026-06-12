@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import {
   api,
-  ensureLogin,
+  getToken,
   type ApiMarket,
   type BuyResult,
   type SellResult,
@@ -214,16 +215,20 @@ function TradePanel({
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
+  const router = useRouter();
 
   const executeTrade = async () => {
     if (!outcomeId) {
-      setMsg({ ok: false, text: "Backend offline — start the API on :8000" });
+      setMsg({ ok: false, text: "Market data unavailable — try again shortly" });
+      return;
+    }
+    if (!getToken()) {
+      router.push("/login");
       return;
     }
     setBusy(true);
     setMsg(null);
     try {
-      await ensureLogin();
       if (tab === "buy") {
         if (amount < 10) throw new Error("Minimum trade is KES 10");
         const r = await api<BuyResult>("/trade/buy", {
@@ -494,7 +499,7 @@ function TradePanel({
       )}
       {balance !== null && (
         <p className="mt-2 text-right text-xs text-mut">
-          Demo balance:{" "}
+          Balance:{" "}
           <span className="font-bold text-white">
             {fmtKes(balance / 100)}
           </span>

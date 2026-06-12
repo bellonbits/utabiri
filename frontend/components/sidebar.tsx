@@ -1,16 +1,11 @@
 import {
-  gradientFor,
-  recentActivity,
-  topVolume,
-  trendingTopics,
-} from "@/lib/data";
-import {
   ChevronRightIcon,
   StarIcon,
   TrendUpIcon,
 } from "@/components/icons";
 import { NseLive } from "@/components/live-markets";
 import { NewsPanel } from "@/components/news-feed";
+import { TopTraders } from "@/components/top-traders";
 
 function Panel({
   children,
@@ -25,18 +20,6 @@ function Panel({
     >
       {children}
     </section>
-  );
-}
-
-function InitialsAvatar({ name, size = "h-7 w-7" }: { name: string; size?: string }) {
-  return (
-    <span
-      className={`flex ${size} shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${gradientFor(
-        name,
-      )} text-[11px] font-bold uppercase text-white`}
-    >
-      {name.slice(0, 1)}
-    </span>
   );
 }
 
@@ -95,79 +78,7 @@ export function Sidebar() {
         <NseLive />
       </Panel>
 
-      <Panel>
-        <div className="mb-3 flex items-center justify-between">
-          <h4 className="text-sm font-bold">Trending Topics</h4>
-          <a href="#" className="text-xs font-semibold text-mut hover:text-white">
-            See all
-          </a>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {trendingTopics.map((t) => (
-            <button
-              key={t}
-              className="rounded-lg border border-line bg-panel-2 px-3 py-1.5 text-xs font-medium text-white/85 transition hover:border-accent/60"
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-      </Panel>
-
-      <Panel>
-        <div className="mb-3 flex items-center justify-between">
-          <h4 className="text-sm font-bold">Recent Activity</h4>
-          <a href="#" className="text-xs font-semibold text-mut hover:text-white">
-            See all
-          </a>
-        </div>
-        <ul className="flex flex-col divide-y divide-line/60">
-          {recentActivity.map((a, i) => (
-            <li key={i} className="flex items-start gap-2.5 py-2.5 first:pt-0 last:pb-0">
-              <InitialsAvatar name={a.user} />
-              <div className="min-w-0 text-xs leading-snug">
-                <p className="truncate text-mut">{a.market}</p>
-                <p className="mt-0.5">
-                  <span className="font-semibold text-white">{a.user}</span>{" "}
-                  <span className="text-mut">{a.action}</span>{" "}
-                  <span
-                    className={
-                      a.side === "Yes"
-                        ? "font-bold text-up"
-                        : "font-bold text-down"
-                    }
-                  >
-                    {a.side}
-                  </span>{" "}
-                  <span className="text-mut">at {a.price}</span>{" "}
-                  <span className="text-mut-2">{a.amount}</span>
-                </p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </Panel>
-
-      <Panel>
-        <div className="mb-3 flex items-center justify-between">
-          <h4 className="text-sm font-bold">Top Volume This Week</h4>
-          <a href="#" className="text-xs font-semibold text-mut hover:text-white">
-            Show all
-          </a>
-        </div>
-        <ol className="grid grid-cols-2 gap-3">
-          {topVolume.map((u, i) => (
-            <li key={u.name} className="flex items-center gap-2">
-              <span className="text-xs font-bold text-mut-2">{i + 1}</span>
-              <InitialsAvatar name={u.name} />
-              <div className="min-w-0">
-                <p className="truncate text-xs font-semibold">{u.name}</p>
-                <p className="truncate text-[11px] text-mut">{u.amount}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </Panel>
+      <TopTraders />
     </aside>
   );
 }

@@ -43,9 +43,10 @@ cd backend && .venv/bin/uvicorn app.main:app --port 8000
 cd frontend && npm run build && npx next start -p 3100
 ```
 
-Seeded accounts: `demo@utabiri.co.ke` / `demo1234` (KES 100,000 balance — the
-trade panel auto-logs into this account) and `admin@utabiri.co.ke` /
-`admin1234` (market creation, resolution, withdrawal approvals via `/admin/*`).
+On first boot the API creates a single admin account from `ADMIN_EMAIL` /
+`ADMIN_PASSWORD` in `backend/.env` (market creation, resolution, withdrawal
+approvals via `/admin/*`). No other data is seeded — markets are created
+through the admin UI, and traders register themselves.
 
 Dev-mode behaviour (no `LIPANA_SECRET_KEY` / `RESEND_API_KEY` set): deposits
 credit instantly, and registration returns the email verification code in the

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { api, type ApiMarket } from "@/lib/api";
-import { markets as staticMarkets, type Market } from "@/lib/data";
+import { toCardMarket } from "@/lib/live";
 import { MarketCard } from "@/components/market-card";
 import {
   BookmarkIcon,
@@ -14,41 +14,15 @@ import {
   SparkIcon,
 } from "@/components/icons";
 
-/** Overlay live backend prices onto the static card data (by outcome index). */
-function mergeLive(m: Market, live?: ApiMarket): Market {
-  if (!live) return m;
-  const pct = (i: number, fallback: number) => {
-    const o = live.outcomes[i];
-    return o ? Math.round(o.price_yes * 100) : fallback;
-  };
-  if (m.kind === "binary") return { ...m, yes: pct(0, m.yes ?? 50) };
-  if (m.kind === "matchup" && m.teams) {
-    return {
-      ...m,
-      teams: [
-        { ...m.teams[0], pct: pct(0, m.teams[0].pct) },
-        { ...m.teams[1], pct: pct(1, m.teams[1].pct) },
-      ],
-    };
-  }
-  if (m.outcomes) {
-    return {
-      ...m,
-      outcomes: m.outcomes.map((o, i) => ({ ...o, yes: pct(i, o.yes) })),
-    };
-  }
-  return m;
-}
-
 export function MarketExplorer() {
-  const [live, setLive] = useState<Map<string, ApiMarket>>(new Map());
+  const [live, setLive] = useState<ApiMarket[]>([]);
   const [query, setQuery] = useState("");
   const [chip, setChip] = useState("All");
 
   useEffect(() => {
     const load = () =>
       api<{ items: ApiMarket[] }>("/markets", { token: null })
-        .then((r) => setLive(new Map(r.items.map((m) => [m.id, m]))))
+        .then((r) => setLive(r.items))
         .catch(() => {});
     load();
     const t = setInterval(load, 15_000);
@@ -57,14 +31,14 @@ export function MarketExplorer() {
 
   const chips = useMemo(() => {
     const cats = Array.from(
-      new Set(staticMarkets.map((m) => m.category).filter(Boolean)),
-    ) as string[];
+      new Set(live.map((m) => m.category).filter(Boolean)),
+    );
     return ["All", ...cats];
-  }, []);
+  }, [live]);
 
   const items = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return staticMarkets
+    return live
       .filter((m) => chip === "All" || m.category === chip)
       .filter(
         (m) =>
@@ -72,7 +46,7 @@ export function MarketExplorer() {
           m.question.toLowerCase().includes(q) ||
           (m.category ?? "").toLowerCase().includes(q),
       )
-      .map((m) => mergeLive(m, live.get(m.id)));
+      .map(toCardMarket);
   }, [query, chip, live]);
 
   return (

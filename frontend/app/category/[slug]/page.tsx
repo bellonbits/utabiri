@@ -8,8 +8,9 @@ import { MarketCard } from "@/components/market-card";
 import { Navbar } from "@/components/navbar";
 import { Sidebar } from "@/components/sidebar";
 import { TrendPulse } from "@/components/trend-pulse";
-import { categories, categoryBySlug } from "@/lib/categories";
-import { markets } from "@/lib/data";
+import type { ApiMarket } from "@/lib/api";
+import { categoryBySlug } from "@/lib/categories";
+import { serverApiUrl, toCardMarket } from "@/lib/live";
 
 /** Map page slugs onto the AI Pulse categories. */
 const AI_CATEGORY: Record<string, string> = {
@@ -21,9 +22,8 @@ const AI_CATEGORY: Record<string, string> = {
   crypto: "Business",
 };
 
-export function generateStaticParams() {
-  return categories.map((c) => ({ slug: c.slug }));
-}
+// market lists change at runtime — always render fresh
+export const dynamic = "force-dynamic";
 
 export default async function CategoryPage({
   params,
@@ -34,9 +34,15 @@ export default async function CategoryPage({
   const category = categoryBySlug(slug);
   if (!category) notFound();
 
-  const items = markets.filter((m) =>
-    category.match.includes(m.category ?? ""),
-  );
+  const live: ApiMarket[] = await fetch(`${serverApiUrl()}/markets`, {
+    cache: "no-store",
+  })
+    .then((r) => (r.ok ? r.json() : { items: [] }))
+    .then((d) => d.items ?? [])
+    .catch(() => []);
+  const items = live
+    .filter((m) => category.match.includes(m.category ?? ""))
+    .map(toCardMarket);
 
   return (
     <div className="min-h-dvh">

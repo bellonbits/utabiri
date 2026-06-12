@@ -33,21 +33,6 @@ export async function api<T>(
   return data as T;
 }
 
-/**
- * Demo session: until the auth pages are wired, trading uses the seeded
- * demo account (KES 100,000 starting balance).
- */
-export async function ensureLogin(): Promise<string> {
-  const existing = getToken();
-  if (existing) return existing;
-  const r = await api<{ access_token: string }>("/auth/login", {
-    method: "POST",
-    body: { email: "demo@utabiri.co.ke", password: "demo1234" },
-    token: null,
-  });
-  localStorage.setItem(TOKEN_KEY, r.access_token);
-  return r.access_token;
-}
 
 export type ApiOutcome = {
   id: string;
@@ -60,8 +45,12 @@ export type ApiMarket = {
   id: string;
   question: string;
   category: string;
+  kind: "binary" | "multi" | "matchup";
+  image: string;
   status: string;
+  end_date: string;
   volume_cents: number;
+  is_new?: boolean;
   outcomes: ApiOutcome[];
 };
 
