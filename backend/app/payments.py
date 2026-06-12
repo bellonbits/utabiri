@@ -74,7 +74,7 @@ def is_paid(data: dict[str, Any]) -> bool:
 
 def receipt_of(data: dict[str, Any]) -> str | None:
     for k in ("mpesaReceiptNumber", "MpesaReceiptNumber", "receipt", "receiptNumber",
-              "mpesaReceipt", "transactionCode"):
+              "mpesaReceipt", "transactionCode", "transaction_id"):
         if data.get(k):
             return str(data[k])
     return None

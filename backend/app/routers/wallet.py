@@ -217,7 +217,10 @@ async def lipana_webhook(request: Request, db: AsyncSession = Depends(get_db)):
         raise HTTPException(400, "invalid signature")
 
     payload = json.loads(raw)
-    if payload.get("event") != "payment.success":
+    event = payload.get("event", "")
+    # Lipana sends transaction.success/.failed (payment.* kept for compat)
+    if event not in {"transaction.success", "payment.success",
+                     "transaction.failed", "payment.failed"}:
         return {"status": "ignored"}
 
     data = payload.get("data", payload)
@@ -225,6 +228,16 @@ async def lipana_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     tx = await db.get(WalletTransaction, ref)
     if tx is None:
         raise HTTPException(400, "unknown reference")
+
+    if event.endswith(".failed"):
+        if tx.status == "pending":
+            tx.status = "failed"
+            await db.commit()
+        return {"status": "ok"}
+
+    amount_kes = data.get("amount")
+    if amount_kes is not None and int(float(amount_kes)) != tx.amount_cents // 100:
+        raise HTTPException(400, "amount mismatch")
 
     await _credit_deposit(db, tx, payments.receipt_of(data))
     await db.commit()
