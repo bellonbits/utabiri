@@ -1,9 +1,9 @@
-"""Live NSE Kenya quotes, scraped from afx.kwayisi.org (delayed public prices).
+"""Live NSE Kenya quotes via TradingView's public scanner API.
 
-Mirrors frontend/app/api/nse/route.ts; this server-side copy exists because
-some frontend hosts (e.g. Vercel) cannot reach the source from their network.
+The original source (afx.kwayisi.org) drops connections from datacenter
+IPs (Vercel, DigitalOcean), so we use TradingView's NSEKE feed instead.
+Response shape mirrors frontend/app/api/nse/route.ts.
 """
-import re
 import time
 from datetime import datetime, timezone
 
@@ -12,12 +12,12 @@ from fastapi import APIRouter, HTTPException
 
 router = APIRouter(tags=["nse"])
 
-SOURCE = "https://afx.kwayisi.org/nse/"
-ROW = re.compile(
-    r'<tr><td><a href=[^>]*title="([^"]+)">([A-Z0-9]+)</a>'
-    r"<td><a [^>]*>[^<]*</a><td>([\d,]*)<td>([\d.,]+)"
-    r"<td(?:\s+class=(?:hi|lo))?>([+-]?[\d.]+)"
-)
+SOURCE = "https://scanner.tradingview.com/kenya/scan"
+QUERY = {
+    "columns": ["name", "description", "close", "change", "change_abs",
+                "volume"],
+    "sort": {"sortBy": "name", "sortOrder": "asc"},
+}
 
 CACHE_SECONDS = 300
 _cache: dict = {"at": 0.0, "data": None}
@@ -29,33 +29,30 @@ async def nse_quotes():
         return _cache["data"]
 
     try:
-        # the source has AAAA records but containers often lack an IPv6
-        # route; binding to 0.0.0.0 forces IPv4
+        # bind to 0.0.0.0 to force IPv4; the container has no IPv6 route
         transport = httpx.AsyncHTTPTransport(local_address="0.0.0.0")
         async with httpx.AsyncClient(timeout=15.0, transport=transport) as c:
-            r = await c.get(SOURCE, headers={
-                "User-Agent": "Mozilla/5.0 (UtabiriBot; market data panel)",
-            })
+            r = await c.post(SOURCE, json=QUERY)
     except httpx.HTTPError as e:
         raise HTTPException(502, f"upstream fetch failed: {e!r}")
     if r.status_code != 200:
         raise HTTPException(502, f"upstream {r.status_code}")
 
     quotes = []
-    for name, symbol, vol, price_raw, change_raw in ROW.findall(r.text):
-        price = float(price_raw.replace(",", ""))
-        change = float(change_raw)
-        prev = price - change
+    for row in r.json().get("data", []):
+        symbol, name, price, change_pct, change, volume = row["d"]
+        if price is None:
+            continue
         quotes.append({
             "symbol": symbol,
-            "name": name.replace("&amp;", "&"),
-            "volume": int(vol.replace(",", "") or 0),
+            "name": name,
+            "volume": int(volume or 0),
             "price": price,
-            "change": change,
-            "changePct": (change / prev) * 100 if prev else 0,
+            "change": change or 0,
+            "changePct": change_pct or 0,
         })
     if not quotes:
-        raise HTTPException(502, "parse failure — source layout changed?")
+        raise HTTPException(502, "empty feed — query rejected?")
 
     data = {
         "quotes": quotes,
