@@ -20,6 +20,24 @@ export type NseApiQuote = {
   changePct: number;
 };
 
+/**
+ * Some hosts (e.g. Vercel) can't reach the source from their network; the
+ * FastAPI backend runs the same scraper at /nse, so proxy through it then.
+ */
+async function fromBackend(): Promise<NextResponse | null> {
+  const backend = process.env.BACKEND_ORIGIN;
+  if (!backend) return null;
+  try {
+    const r = await fetch(`${backend}/nse`, { next: { revalidate: 300 } });
+    if (!r.ok) return null;
+    return NextResponse.json(await r.json(), {
+      headers: { "Cache-Control": "public, max-age=300" },
+    });
+  } catch {
+    return null;
+  }
+}
+
 export async function GET() {
   try {
     const res = await fetch(SOURCE, {
@@ -27,9 +45,9 @@ export async function GET() {
       next: { revalidate: 300 },
     });
     if (!res.ok) {
-      return NextResponse.json(
-        { error: `upstream ${res.status}` },
-        { status: 502 },
+      return (
+        (await fromBackend()) ??
+        NextResponse.json({ error: `upstream ${res.status}` }, { status: 502 })
       );
     }
     const html = await res.text();
@@ -51,9 +69,12 @@ export async function GET() {
     }
 
     if (quotes.length === 0) {
-      return NextResponse.json(
-        { error: "parse failure — source layout changed?" },
-        { status: 502 },
+      return (
+        (await fromBackend()) ??
+        NextResponse.json(
+          { error: "parse failure — source layout changed?" },
+          { status: 502 },
+        )
       );
     }
 
@@ -62,6 +83,9 @@ export async function GET() {
       { headers: { "Cache-Control": "public, max-age=300" } },
     );
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 502 });
+    return (
+      (await fromBackend()) ??
+      NextResponse.json({ error: String(e) }, { status: 502 })
+    );
   }
 }

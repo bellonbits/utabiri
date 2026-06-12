@@ -9,7 +9,7 @@ from sqlalchemy import func, select
 from . import engine as lmsr
 from .database import Base, SessionFactory, engine
 from .models import Market, Outcome, PricePoint, User, Wallet
-from .routers import admin, auth, markets, trading, trends, wallet
+from .routers import admin, auth, markets, nse, trading, trends, wallet
 from .security import hash_password
 
 # Mirrors frontend/lib/data.ts so both layers show the same markets.
@@ -104,7 +104,7 @@ app.add_middleware(
 )
 
 for r in (auth.router, wallet.router, markets.router, trading.router,
-          trends.router, admin.router):
+          trends.router, nse.router, admin.router):
     app.include_router(r)
 
 
