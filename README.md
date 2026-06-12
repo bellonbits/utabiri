@@ -52,6 +52,24 @@ credit instantly, and registration returns the email verification code in the
 response instead of sending it. Set the env vars to enable the real Lipana
 STK push + webhook and Resend email paths.
 
+## Deploying with Docker (VPS)
+
+```bash
+git clone <repo> && cd utabiri
+cp backend/.env.example backend/.env   # fill in secrets
+NEXT_PUBLIC_API_URL=https://api.utabiri.co.ke docker compose up -d --build
+```
+
+- `api` (FastAPI) listens on :8000, `web` (Next.js standalone) on :3000 —
+  put Nginx/Caddy in front for TLS (see [docs/09-deployment.md](docs/09-deployment.md)).
+- SQLite lives in the `api-data` volume; swap `DATABASE_URL` in
+  `backend/.env` to Postgres when ready.
+- `NEXT_PUBLIC_API_URL` is the URL the **browser** uses to reach the API.
+  It is baked into the web image at build time — rerun
+  `docker compose up -d --build web` after changing it.
+
+To redeploy after a code change: `git pull && docker compose up -d --build`.
+
 ## Regulatory note
 
 Real-money prediction markets in Kenya fall under the Betting Control and

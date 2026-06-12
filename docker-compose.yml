@@ -1,0 +1,25 @@
+services:
+  api:
+    build: ./backend
+    env_file: backend/.env
+    ports:
+      - "8000:8000"
+    volumes:
+      - api-data:/data
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        # public URL the *browser* uses to reach the API — baked in at build time,
+        # so rebuild the web image whenever this changes
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  api-data:

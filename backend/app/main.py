@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 
@@ -94,10 +95,9 @@ app = FastAPI(title="Utabiri API", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3100",
-    ],
+    allow_origins=os.environ.get(
+        "CORS_ORIGINS", "http://localhost:3000,http://localhost:3100"
+    ).split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
