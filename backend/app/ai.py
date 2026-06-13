@@ -188,12 +188,12 @@ async def suggest_markets(
     if not ENABLED:
         raise AiError("GROQ_API_KEY not configured")
 
-    # Inject category focus into the system prompt when requested
     cat_instruction = (
-        f"\n\nFOCUS: Generate suggestions ONLY in the '{category}' category. "
-        f"Every suggestion must have category='{category}'. "
-        f"If headlines don't cover {category}, draw on your knowledge of upcoming "
-        f"Kenyan {category} events to craft resolvable markets."
+        f"\n\nSTRICT RULE: You MUST generate suggestions ONLY about '{category}' topics. "
+        f"Every single suggestion must have category='{category}'. "
+        f"Do NOT generate Politics, Sports, or any other category unless that IS the requested category. "
+        f"If the headlines don't contain {category} stories, IGNORE the headlines and instead "
+        f"invent 5 original {category} prediction markets about Kenya using your own knowledge."
         if category
         else ""
     )
@@ -204,19 +204,43 @@ async def suggest_markets(
         for h in headlines[:30]
     )
 
-    result = await _groq_suggest(system, f"Today's headlines:\n{digest}")
+    # Repeat the category constraint in the user turn so the model can't miss it
+    cat_prefix = (
+        f"TARGET CATEGORY: {category} — generate ONLY {category} markets, no exceptions.\n\n"
+        if category else ""
+    )
+    result = await _groq_suggest(system, f"{cat_prefix}Today's headlines:\n{digest}")
 
-    # Guarantee at least 3 suggestions: fall back to pure-knowledge generation
+    # Drop any suggestions the AI tagged with the wrong category
+    if category:
+        cat_lower = category.lower()
+        result["suggestions"] = [
+            s for s in result["suggestions"]
+            if cat_lower in s["category"].lower() or s["category"].lower() in cat_lower
+        ]
+        # Force the label on survivors so UI is consistent
+        for s in result["suggestions"]:
+            s["category"] = category
+
+    # Guarantee at least 3 — pure-knowledge fallback, no headlines
     if len(result["suggestions"]) < 3:
         cat_label = category or "Kenyan"
         fallback_msg = (
-            f"The headlines above don't provide enough {cat_label} material. "
-            f"Generate exactly 5 original, resolvable {cat_label} prediction markets "
-            f"for events that could be known within the next 30-90 days in Kenya. "
-            f"Do not repeat any question already proposed. Base dates on {date.today().isoformat()}."
+            f"TARGET CATEGORY: {category}\n"
+            f"Ignore the previous headlines. Generate exactly 5 brand-new {cat_label} prediction markets "
+            f"for Kenya, resolvable within 30-90 days. Every market must be strictly about {cat_label}. "
+            f"Do NOT generate any Politics or off-topic markets. "
+            f"Base end_date values on today {date.today().isoformat()}."
         )
         fallback = await _groq_suggest(system, fallback_msg)
-        # merge: keep headline-based ones first, fill with fallback up to 5
+        if category:
+            cat_lower = category.lower()
+            fallback["suggestions"] = [
+                s for s in fallback["suggestions"]
+                if cat_lower in s["category"].lower() or s["category"].lower() in cat_lower
+            ]
+            for s in fallback["suggestions"]:
+                s["category"] = category
         seen = {s["question"] for s in result["suggestions"]}
         for s in fallback["suggestions"]:
             if s["question"] not in seen and len(result["suggestions"]) < 5:
