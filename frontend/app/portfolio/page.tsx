@@ -332,7 +332,7 @@ export default function PortfolioPage() {
           </div>
 
           {/* ---------- right rail ---------- */}
-          <aside className="flex flex-col gap-4">
+          <aside className="hidden flex-col gap-4 lg:flex">
             <div className="rounded-2xl border border-line bg-panel p-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-bold">My Portfolio</h2>

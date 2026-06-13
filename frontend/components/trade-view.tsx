@@ -88,7 +88,7 @@ export function TradeView({
             height={48}
             className="h-12 w-12 shrink-0 rounded-xl object-cover"
           />
-          <h1 className="min-w-0 flex-1 text-2xl font-extrabold tracking-tight sm:text-3xl">
+          <h1 className="min-w-0 flex-1 text-lg font-extrabold tracking-tight sm:text-2xl lg:text-3xl">
             {market.question}
           </h1>
           <button className="rounded-md p-2 text-mut hover:text-white">
@@ -125,40 +125,42 @@ export function TradeView({
         {/* outcome rows */}
         <div className="divide-y divide-line/70">
           {outcomes.map((o, i) => (
-            <div key={o.label} className="flex items-center gap-3 py-3.5">
+            <div key={o.label} className="flex items-center gap-2 py-3 sm:gap-3 sm:py-3.5">
               <span
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-extrabold text-white"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xs font-extrabold text-white sm:h-10 sm:w-10 sm:text-sm"
                 style={{ background: o.color }}
               >
                 {o.label.slice(0, 2).toUpperCase()}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[15px] font-bold">{o.label}</p>
+                <p className="truncate text-sm font-bold sm:text-[15px]">{o.label}</p>
                 <p className="text-xs text-mut">{o.vol}</p>
               </div>
-              <span className="w-20 text-center text-2xl font-extrabold tracking-tight">
+              <span className="w-12 text-center text-xl font-extrabold tracking-tight sm:w-20 sm:text-2xl">
                 {o.pct}%
               </span>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5 sm:gap-2">
                 <button
                   onClick={() => pick(i, "yes")}
-                  className={`w-32 rounded-lg py-2.5 text-sm font-bold transition ${
+                  className={`rounded-lg px-2.5 py-2 text-xs font-bold transition sm:w-32 sm:py-2.5 sm:text-sm ${
                     sel === i && side === "yes"
                       ? "bg-up text-ink"
                       : "bg-up/15 text-up hover:bg-up/30"
                   }`}
                 >
-                  Buy Yes {o.pct}¢
+                  <span className="sm:hidden">Yes {o.pct}¢</span>
+                  <span className="hidden sm:inline">Buy Yes {o.pct}¢</span>
                 </button>
                 <button
                   onClick={() => pick(i, "no")}
-                  className={`w-32 rounded-lg py-2.5 text-sm font-bold transition ${
+                  className={`rounded-lg px-2.5 py-2 text-xs font-bold transition sm:w-32 sm:py-2.5 sm:text-sm ${
                     sel === i && side === "no"
                       ? "bg-down text-white"
                       : "bg-down/15 text-down hover:bg-down/30"
                   }`}
                 >
-                  Buy No {100 - o.pct}¢
+                  <span className="sm:hidden">No {100 - o.pct}¢</span>
+                  <span className="hidden sm:inline">Buy No {100 - o.pct}¢</span>
                 </button>
               </div>
             </div>
@@ -278,7 +280,7 @@ function TradePanel({
   const limitToWin = shares; // each share pays KES 1
 
   return (
-    <section className="sticky top-20 rounded-2xl border border-line bg-panel p-5 shadow-xl shadow-black/20">
+    <section className="lg:sticky lg:top-20 rounded-2xl border border-line bg-panel p-5 shadow-xl shadow-black/20">
       {/* header */}
       <div className="flex items-center gap-3">
         <Image

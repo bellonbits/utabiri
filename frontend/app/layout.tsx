@@ -16,6 +16,10 @@ export const metadata: Metadata = {
   title: "Utabiri — Kenya's Prediction Market",
   description:
     "Trade YES/NO on politics, sports and the economy. Deposit with M-Pesa.",
+  icons: {
+    icon: "/logo-mark.png",
+    apple: "/logo-mark.png",
+  },
 };
 
 export default function RootLayout({
