@@ -66,6 +66,7 @@ class HeadlineIn(BaseModel):
 
 class SuggestIn(BaseModel):
     headlines: list[HeadlineIn] = Field(min_length=1, max_length=40)
+    category: str = ""
 
 
 @router.post("/markets", status_code=201)
@@ -215,11 +216,13 @@ async def suggest_markets(
 ):
     """AI (Groq) turns today's headlines into draft market suggestions."""
     try:
-        result = await ai.suggest_markets([h.model_dump() for h in body.headlines])
+        result = await ai.suggest_markets(
+            [h.model_dump() for h in body.headlines], category=body.category
+        )
     except ai.AiError as e:
         raise HTTPException(502, f"AI: {e}")
     db.add(AuditLog(action="admin.ai_suggest", user_id=admin.id,
-                    metadata_json=json.dumps({"n": len(body.headlines)})))
+                    metadata_json=json.dumps({"n": len(body.headlines), "category": body.category})))
     await db.commit()
     return result
 

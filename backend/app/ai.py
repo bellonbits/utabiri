@@ -129,15 +129,8 @@ async def analyze_trends(headlines: list[dict[str, str]]) -> dict[str, Any]:
     return {"hottest": hottest, "by_category": by_category}
 
 
-async def suggest_markets(headlines: list[dict[str, str]]) -> dict[str, Any]:
-    if not ENABLED:
-        raise AiError("GROQ_API_KEY not configured")
-
-    digest = "\n".join(
-        f"- [{h.get('category', 'General')}] {h.get('title', '')} ({h.get('source', '')})"
-        for h in headlines[:30]
-    )
-
+async def _groq_suggest(system: str, user_msg: str) -> dict[str, Any]:
+    """Raw Groq call → parsed + normalised suggestions dict."""
     async with httpx.AsyncClient(timeout=45.0) as client:
         r = await client.post(
             "https://api.groq.com/openai/v1/chat/completions",
@@ -145,24 +138,21 @@ async def suggest_markets(headlines: list[dict[str, str]]) -> dict[str, Any]:
             json={
                 "model": GROQ_MODEL,
                 "messages": [
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": f"Today's headlines:\n{digest}"},
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user_msg},
                 ],
-                "temperature": 0.4,
-                "max_tokens": 1500,
+                "temperature": 0.5,
+                "max_tokens": 1800,
                 "response_format": {"type": "json_object"},
             },
         )
     if r.status_code >= 400:
         raise AiError(f"Groq HTTP {r.status_code}: {r.text[:200]}")
-
-    content = r.json()["choices"][0]["message"]["content"]
     try:
-        data = json.loads(content)
-    except json.JSONDecodeError:
-        raise AiError("Groq returned non-JSON output")
+        data = json.loads(r.json()["choices"][0]["message"]["content"])
+    except (json.JSONDecodeError, KeyError, IndexError):
+        raise AiError("Groq returned malformed output")
 
-    # defensive normalisation so the admin UI can trust the shape
     out: dict[str, Any] = {"trends": [], "suggestions": []}
     for t in (data.get("trends") or [])[:4]:
         if isinstance(t, str):
@@ -171,7 +161,6 @@ async def suggest_markets(headlines: list[dict[str, str]]) -> dict[str, Any]:
     for s in (data.get("suggestions") or [])[:5]:
         if not isinstance(s, dict) or not s.get("question"):
             continue
-        # models sometimes anchor to stale training dates — drop past-dated markets
         end = str(s.get("end_date", ""))[:10]
         if end and end <= today:
             continue
@@ -191,3 +180,49 @@ async def suggest_markets(headlines: list[dict[str, str]]) -> dict[str, Any]:
             "end_date": str(s.get("end_date", ""))[:10],
         })
     return out
+
+
+async def suggest_markets(
+    headlines: list[dict[str, str]], category: str = ""
+) -> dict[str, Any]:
+    if not ENABLED:
+        raise AiError("GROQ_API_KEY not configured")
+
+    # Inject category focus into the system prompt when requested
+    cat_instruction = (
+        f"\n\nFOCUS: Generate suggestions ONLY in the '{category}' category. "
+        f"Every suggestion must have category='{category}'. "
+        f"If headlines don't cover {category}, draw on your knowledge of upcoming "
+        f"Kenyan {category} events to craft resolvable markets."
+        if category
+        else ""
+    )
+    system = SYSTEM_PROMPT + cat_instruction
+
+    digest = "\n".join(
+        f"- [{h.get('category', 'General')}] {h.get('title', '')} ({h.get('source', '')})"
+        for h in headlines[:30]
+    )
+
+    result = await _groq_suggest(system, f"Today's headlines:\n{digest}")
+
+    # Guarantee at least 3 suggestions: fall back to pure-knowledge generation
+    if len(result["suggestions"]) < 3:
+        cat_label = category or "Kenyan"
+        fallback_msg = (
+            f"The headlines above don't provide enough {cat_label} material. "
+            f"Generate exactly 5 original, resolvable {cat_label} prediction markets "
+            f"for events that could be known within the next 30-90 days in Kenya. "
+            f"Do not repeat any question already proposed. Base dates on {date.today().isoformat()}."
+        )
+        fallback = await _groq_suggest(system, fallback_msg)
+        # merge: keep headline-based ones first, fill with fallback up to 5
+        seen = {s["question"] for s in result["suggestions"]}
+        for s in fallback["suggestions"]:
+            if s["question"] not in seen and len(result["suggestions"]) < 5:
+                result["suggestions"].append(s)
+                seen.add(s["question"])
+        if not result["trends"] and fallback["trends"]:
+            result["trends"] = fallback["trends"]
+
+    return result

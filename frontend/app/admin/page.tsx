@@ -62,6 +62,7 @@ export default function AdminPage() {
 
   // AI suggestions
   const [aiBusy, setAiBusy] = useState(false);
+  const [aiCategory, setAiCategory] = useState("Politics");
   const [trends, setTrends] = useState<string[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
 
@@ -179,11 +180,11 @@ export default function AdminPage() {
       if (headlines.length === 0) throw new Error("No headlines available");
       const r = await api<{ trends: string[]; suggestions: Suggestion[] }>(
         "/admin/suggest-markets",
-        { method: "POST", body: { headlines } },
+        { method: "POST", body: { headlines, category: aiCategory } },
       );
       setTrends(r.trends);
       setSuggestions(r.suggestions);
-      setMsg({ ok: true, text: `AI proposed ${r.suggestions.length} markets from today's news` });
+      setMsg({ ok: true, text: `AI proposed ${r.suggestions.length} ${aiCategory} markets` });
     } catch (e) {
       setMsg({ ok: false, text: e instanceof Error ? e.message : "AI failed" });
     } finally {
@@ -236,17 +237,28 @@ export default function AdminPage() {
             <div className="min-w-0 flex-1">
               <h2 className="text-base font-bold">AI Market Suggestions</h2>
               <p className="text-xs text-mut">
-                Groq reads today&apos;s headlines from the news aggregator and
-                drafts resolvable markets — you review before publishing.
+                Groq reads today&apos;s headlines and drafts resolvable markets — you review before publishing.
               </p>
             </div>
-            <button
-              onClick={generateSuggestions}
-              disabled={aiBusy}
-              className="rounded-full bg-accent px-5 py-2 text-sm font-bold text-white transition hover:bg-accent-2 disabled:opacity-50"
-            >
-              {aiBusy ? "Reading the news…" : "Generate from latest news"}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={aiCategory}
+                onChange={(e) => setAiCategory(e.target.value)}
+                disabled={aiBusy}
+                className="rounded-full border border-line bg-panel px-3 py-2 text-sm font-semibold disabled:opacity-50"
+              >
+                {["Politics", "Sports", "Elections", "Finance", "Business", "Technology", "Entertainment", "Crypto", "Economy", "Kenya"].map((c) => (
+                  <option key={c}>{c}</option>
+                ))}
+              </select>
+              <button
+                onClick={generateSuggestions}
+                disabled={aiBusy}
+                className="rounded-full bg-accent px-5 py-2 text-sm font-bold text-white transition hover:bg-accent-2 disabled:opacity-50"
+              >
+                {aiBusy ? "Generating…" : "Generate"}
+              </button>
+            </div>
           </div>
 
           {trends.length > 0 && (
