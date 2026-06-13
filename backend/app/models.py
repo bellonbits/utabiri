@@ -24,6 +24,7 @@ class User(Base):
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     verification_code: Mapped[str | None] = mapped_column(String(6), nullable=True)
+    avatar_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     wallet: Mapped["Wallet"] = relationship(back_populates="user", uselist=False)
@@ -156,4 +157,20 @@ class PricePoint(Base):
         String(36), ForeignKey("outcomes.id"), index=True
     )
     price_yes: Mapped[float] = mapped_column(Float)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class Comment(Base):
+    __tablename__ = "comments"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    market_id: Mapped[str] = mapped_column(String(64), ForeignKey("markets.id"), index=True)
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True)
+    text: Mapped[str] = mapped_column(String(500))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class Follow(Base):
+    __tablename__ = "follows"
+    follower_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), primary_key=True)
+    following_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), primary_key=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

@@ -1,24 +1,34 @@
 import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import select
+from fastapi.staticfiles import StaticFiles
+from sqlalchemy import select, text
 
 from .database import Base, SessionFactory, engine
 from .models import User, Wallet
-from .routers import admin, auth, markets, nse, trading, trends, wallet
+from .routers import admin, auth, markets, nse, social, trading, trends, wallet
 from .security import hash_password
+
+UPLOAD_DIR = Path(os.environ.get("UPLOAD_DIR", "/data/uploads"))
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+
+async def _migrate() -> None:
+    """Add columns / tables that were added after the initial schema."""
+    async with engine.begin() as conn:
+        cols = {r[1] for r in await conn.execute(text("PRAGMA table_info(users)"))}
+        if "avatar_url" not in cols:
+            await conn.execute(text("ALTER TABLE users ADD COLUMN avatar_url TEXT"))
 
 
 async def ensure_admin() -> None:
-    """Create the admin account from env on first boot. Markets are created
-    by the admin through /admin/* — nothing else is seeded."""
     email = os.environ.get("ADMIN_EMAIL", "")
     password = os.environ.get("ADMIN_PASSWORD", "")
     if not (email and password):
-        print("[utabiri] ADMIN_EMAIL/ADMIN_PASSWORD not set — "
-              "no admin account; /admin endpoints will be unusable")
+        print("[utabiri] ADMIN_EMAIL/ADMIN_PASSWORD not set — no admin account")
         return
     async with SessionFactory() as db:
         if await db.scalar(select(User.id).where(User.email == email)):
@@ -41,6 +51,7 @@ async def ensure_admin() -> None:
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    await _migrate()
     await ensure_admin()
     yield
 
@@ -58,8 +69,10 @@ app.add_middleware(
 )
 
 for r in (auth.router, wallet.router, markets.router, trading.router,
-          trends.router, nse.router, admin.router):
+          trends.router, nse.router, admin.router, social.router):
     app.include_router(r)
+
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
 
 @app.get("/health")

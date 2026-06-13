@@ -4,6 +4,7 @@ import { Footer } from "@/components/footer";
 import { CategoryTabs } from "@/components/category-tabs";
 import { Navbar } from "@/components/navbar";
 import { PriceChart, type ChartSeries } from "@/components/price-chart";
+import { MarketComments } from "@/components/market-comments";
 import {
   TradeView,
   type TradeMarketDto,
@@ -61,6 +62,9 @@ export default async function MarketPage({
           outcomes={outcomes}
           chart={<PriceChart series={series} />}
         />
+        <div className="mx-auto mt-6 max-w-2xl">
+          <MarketComments marketId={id} />
+        </div>
       </main>
       <Footer />
       <BottomNav />

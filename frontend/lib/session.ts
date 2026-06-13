@@ -8,6 +8,7 @@ export type SessionUser = {
   display_name: string;
   is_admin: boolean;
   is_verified: boolean;
+  avatar_url?: string | null;
 };
 
 const TOKEN_KEY = "utabiri_token"; // shared with lib/api.ts

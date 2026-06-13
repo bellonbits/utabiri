@@ -47,6 +47,21 @@ def create_token(user_id: str, is_admin: bool) -> str:
     )
 
 
+async def optional_user(
+    creds: HTTPAuthorizationCredentials | None = Depends(bearer),
+    db: AsyncSession = Depends(get_db),
+):
+    """Returns the current user or None if unauthenticated."""
+    from .models import User
+    if creds is None:
+        return None
+    try:
+        payload = jwt.decode(creds.credentials, JWT_SECRET, algorithms=["HS256"])
+    except jwt.PyJWTError:
+        return None
+    return await db.get(User, payload["sub"])
+
+
 async def get_current_user(
     creds: HTTPAuthorizationCredentials | None = Depends(bearer),
     db: AsyncSession = Depends(get_db),

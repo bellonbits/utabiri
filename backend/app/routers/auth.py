@@ -45,6 +45,7 @@ def user_dto(u: User) -> dict:
         "display_name": u.display_name,
         "is_admin": u.is_admin,
         "is_verified": u.is_verified,
+        "avatar_url": u.avatar_url,
     }
 
 

@@ -118,7 +118,9 @@ async def leaderboard(db: AsyncSession = Depends(get_db)):
     rows = (
         await db.execute(
             select(
+                User.id,
                 User.display_name,
+                User.avatar_url,
                 func.coalesce(pnl.c.profit, 0),
                 func.coalesce(vol.c.volume, 0),
                 func.coalesce(vol.c.trades, 0),
@@ -133,11 +135,13 @@ async def leaderboard(db: AsyncSession = Depends(get_db)):
         "items": [
             {
                 "rank": i + 1,
+                "user_id": uid,
                 "display_name": name,
+                "avatar_url": avatar,
                 "profit_cents": int(profit),
                 "volume_cents": int(volume),
                 "total_trades": int(trades),
             }
-            for i, (name, profit, volume, trades) in enumerate(rows)
+            for i, (uid, name, avatar, profit, volume, trades) in enumerate(rows)
         ]
     }
