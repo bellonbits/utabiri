@@ -11,7 +11,7 @@ from sqlalchemy import select, text
 from . import ai
 from .database import Base, SessionFactory, engine
 from .models import User
-from .routers import admin, auth, bills, briefing as briefing_router, commodities, insights, macro, nse, social, trends
+from .routers import admin, auth, bills, briefing as briefing_router, commodities, insights, macro, nse, social, sync, trends
 from .security import hash_password
 from .services import briefing, kamis
 
@@ -105,7 +105,7 @@ app.add_middleware(
 
 for r in (auth.router, commodities.router, macro.router, insights.router,
           trends.router, nse.router, admin.router, social.router,
-          briefing_router.router, bills.router):
+          briefing_router.router, bills.router, sync.router):
     app.include_router(r)
 
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")

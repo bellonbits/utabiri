@@ -101,6 +101,21 @@ async def fetch_commodity_rows(product_id: str, commodity_name: str, per_page: i
     return _parse_rows(r.text, commodity_name)
 
 
+async def upsert_rows(db: AsyncSession, rows: list[dict]) -> int:
+    """Upserts pre-fetched/parsed rows (commodity, market, price_date unique
+    on conflict). Used both by the local scraper below and by the Vercel-side
+    sync route, which scrapes from an IP KAMIS doesn't block and POSTs the
+    parsed rows here instead."""
+    if not rows:
+        return 0
+    stmt = sqlite_insert(CommodityPrice).values(rows).on_conflict_do_nothing(
+        index_elements=["commodity", "market", "price_date"]
+    )
+    result = await db.execute(stmt)
+    await db.commit()
+    return result.rowcount or 0
+
+
 async def ingest_latest(db: AsyncSession, per_page: int = 50) -> dict:
     """Fetches the latest price rows for every commodity and upserts them.
     Returns {"products": n, "rows_seen": n, "rows_inserted": n}.
@@ -115,14 +130,9 @@ async def ingest_latest(db: AsyncSession, per_page: int = 50) -> dict:
             continue
         rows_seen += len(rows)
         if rows:
-            stmt = sqlite_insert(CommodityPrice).values(rows).on_conflict_do_nothing(
-                index_elements=["commodity", "market", "price_date"]
-            )
-            result = await db.execute(stmt)
-            rows_inserted += result.rowcount or 0
             # commit per-product so this long-running scrape doesn't hold a single
             # SQLite write lock for the whole ~80s run and starve other requests
-            await db.commit()
+            rows_inserted += await upsert_rows(db, rows)
         await asyncio.sleep(REQUEST_DELAY_SECONDS)
     return {
         "products": len(products),
