@@ -78,3 +78,9 @@ async def get_current_user(
     if user is None:
         raise HTTPException(401, "Unknown user")
     return user
+
+
+async def require_admin(user=Depends(get_current_user)):
+    if not user.is_admin:
+        raise HTTPException(403, "FORBIDDEN")
+    return user

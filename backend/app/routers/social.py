@@ -8,7 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
-from ..models import Comment, Follow, User
+from ..models import Comment, Follow, Interest, User
 from ..security import get_current_user, optional_user
 
 router = APIRouter(tags=["social"])
@@ -25,13 +25,13 @@ class CommentIn(BaseModel):
 
 # ── comments ────────────────────────────────────────────────────────────────
 
-@router.get("/markets/{market_id}/comments")
-async def list_comments(market_id: str, db: AsyncSession = Depends(get_db)):
+@router.get("/insights/{insight_id}/comments")
+async def list_comments(insight_id: str, db: AsyncSession = Depends(get_db)):
     rows = (
         await db.execute(
             select(Comment, User.display_name, User.avatar_url)
             .join(User, User.id == Comment.user_id)
-            .where(Comment.market_id == market_id)
+            .where(Comment.insight_id == insight_id)
             .order_by(Comment.created_at.desc())
             .limit(100)
         )
@@ -51,14 +51,14 @@ async def list_comments(market_id: str, db: AsyncSession = Depends(get_db)):
     }
 
 
-@router.post("/markets/{market_id}/comments", status_code=201)
+@router.post("/insights/{insight_id}/comments", status_code=201)
 async def post_comment(
-    market_id: str,
+    insight_id: str,
     body: CommentIn,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    c = Comment(market_id=market_id, user_id=user.id, text=body.text.strip())
+    c = Comment(insight_id=insight_id, user_id=user.id, text=body.text.strip())
     db.add(c)
     await db.commit()
     return {
@@ -84,6 +84,48 @@ async def delete_comment(
         raise HTTPException(403, "FORBIDDEN")
     await db.delete(c)
     await db.commit()
+
+
+# ── leaderboard ───────────────────────────────────────────────────────────────
+
+@router.get("/leaderboard")
+async def leaderboard(db: AsyncSession = Depends(get_db)):
+    follower_counts = (
+        select(Follow.following_id, func.count().label("n"))
+        .group_by(Follow.following_id)
+        .subquery()
+    )
+    comment_counts = (
+        select(Comment.user_id, func.count().label("n"))
+        .group_by(Comment.user_id)
+        .subquery()
+    )
+    rows = (
+        await db.execute(
+            select(
+                User.id, User.display_name, User.avatar_url,
+                func.coalesce(follower_counts.c.n, 0),
+                func.coalesce(comment_counts.c.n, 0),
+            )
+            .outerjoin(follower_counts, follower_counts.c.following_id == User.id)
+            .outerjoin(comment_counts, comment_counts.c.user_id == User.id)
+            .order_by(func.coalesce(follower_counts.c.n, 0).desc())
+            .limit(50)
+        )
+    ).all()
+    return {
+        "items": [
+            {
+                "rank": i + 1,
+                "user_id": r[0],
+                "display_name": r[1],
+                "avatar_url": r[2],
+                "followers": r[3],
+                "comments": r[4],
+            }
+            for i, r in enumerate(rows)
+        ]
+    }
 
 
 # ── follows ──────────────────────────────────────────────────────────────────
@@ -220,3 +262,41 @@ async def update_profile(
     db.add(user)
     await db.commit()
     return {"display_name": user.display_name}
+
+
+# ── interests (personalization tags) ─────────────────────────────────────────
+
+class InterestIn(BaseModel):
+    tag: str = Field(min_length=1, max_length=40)
+
+
+@router.get("/users/me/interests")
+async def list_interests(
+    user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
+    rows = (await db.scalars(select(Interest.tag).where(Interest.user_id == user.id))).all()
+    return {"items": list(rows)}
+
+
+@router.post("/users/me/interests", status_code=201)
+async def add_interest(
+    body: InterestIn,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    tag = body.tag.strip().lower()
+    existing = await db.get(Interest, (user.id, tag))
+    if not existing:
+        db.add(Interest(user_id=user.id, tag=tag))
+        await db.commit()
+    return {"tag": tag}
+
+
+@router.delete("/users/me/interests/{tag}", status_code=204)
+async def remove_interest(
+    tag: str, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
+    existing = await db.get(Interest, (user.id, tag))
+    if existing:
+        await db.delete(existing)
+        await db.commit()

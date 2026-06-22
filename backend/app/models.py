@@ -1,7 +1,17 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import (
+    Boolean,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -27,42 +37,6 @@ class User(Base):
     avatar_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
-    wallet: Mapped["Wallet"] = relationship(back_populates="user", uselist=False)
-
-
-class Wallet(Base):
-    __tablename__ = "wallets"
-    user_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("users.id"), primary_key=True
-    )
-    balance_cents: Mapped[int] = mapped_column(Integer, default=0)  # available
-    locked_cents: Mapped[int] = mapped_column(Integer, default=0)  # pending wdrl
-    total_deposits_cents: Mapped[int] = mapped_column(Integer, default=0)
-    total_withdrawals_cents: Mapped[int] = mapped_column(Integer, default=0)
-
-    user: Mapped[User] = relationship(back_populates="wallet")
-
-
-class Withdrawal(Base):
-    __tablename__ = "withdrawals"
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
-    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True)
-    amount_cents: Mapped[int] = mapped_column(Integer)  # gross requested
-    fee_cents: Mapped[int] = mapped_column(Integer, default=0)
-    phone: Mapped[str] = mapped_column(String(15))
-    status: Mapped[str] = mapped_column(String(12), default="pending", index=True)
-    # pending -> approved -> completed | rejected
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
-
-
-class PlatformRevenue(Base):
-    __tablename__ = "platform_revenue"
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
-    source: Mapped[str] = mapped_column(String(20))  # trade_fee | withdrawal_fee
-    amount_cents: Mapped[int] = mapped_column(Integer)
-    reference: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
-
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"
@@ -73,97 +47,14 @@ class AuditLog(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
-class WalletTransaction(Base):
-    __tablename__ = "wallet_transactions"
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
-    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True)
-    type: Mapped[str] = mapped_column(String(20))  # deposit|trade_buy|trade_sell|payout
-    amount_cents: Mapped[int] = mapped_column(Integer)  # signed
-    status: Mapped[str] = mapped_column(String(20), default="completed")
-    lipana_transaction_id: Mapped[str | None] = mapped_column(
-        String(64), unique=True, nullable=True
-    )
-    provider_tx_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    market_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
-
-
-class Market(Base):
-    __tablename__ = "markets"
-    id: Mapped[str] = mapped_column(String(64), primary_key=True)  # slug
-    question: Mapped[str] = mapped_column(String(200))
-    category: Mapped[str] = mapped_column(String(40), default="Markets")
-    kind: Mapped[str] = mapped_column(String(10), default="multi")
-    image: Mapped[str] = mapped_column(Text, default="")
-    status: Mapped[str] = mapped_column(String(10), default="open", index=True)
-    end_date: Mapped[datetime] = mapped_column(DateTime)
-    volume_cents: Mapped[int] = mapped_column(Integer, default=0)
-    is_new: Mapped[bool] = mapped_column(Boolean, default=False)
-    live_status: Mapped[str | None] = mapped_column(String(10), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
-
-    outcomes: Mapped[list["Outcome"]] = relationship(
-        back_populates="market", order_by="Outcome.sort"
-    )
-
-
-class Outcome(Base):
-    """Each outcome is its own binary YES/NO LMSR pool (Polymarket-style)."""
-
-    __tablename__ = "outcomes"
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
-    market_id: Mapped[str] = mapped_column(
-        String(64), ForeignKey("markets.id"), index=True
-    )
-    label: Mapped[str] = mapped_column(String(80))
-    sort: Mapped[int] = mapped_column(Integer, default=0)
-    b: Mapped[float] = mapped_column(Float, default=1000.0)
-    q_yes: Mapped[float] = mapped_column(Float, default=0.0)
-    q_no: Mapped[float] = mapped_column(Float, default=0.0)
-    price_yes: Mapped[float] = mapped_column(Float, default=0.5)
-
-    market: Mapped[Market] = relationship(back_populates="outcomes")
-
-
-class Position(Base):
-    __tablename__ = "positions"
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
-    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True)
-    outcome_id: Mapped[str] = mapped_column(String(36), ForeignKey("outcomes.id"))
-    side: Mapped[str] = mapped_column(String(3))  # YES|NO
-    quantity: Mapped[float] = mapped_column(Float, default=0.0)
-    cost_cents: Mapped[int] = mapped_column(Integer, default=0)
-    realized_pnl_cents: Mapped[int] = mapped_column(Integer, default=0)
-    settled: Mapped[bool] = mapped_column(Boolean, default=False)
-
-
-class Trade(Base):
-    __tablename__ = "trades"
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
-    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True)
-    outcome_id: Mapped[str] = mapped_column(String(36), ForeignKey("outcomes.id"))
-    side: Mapped[str] = mapped_column(String(3))
-    type: Mapped[str] = mapped_column(String(4))  # buy|sell
-    quantity: Mapped[float] = mapped_column(Float)
-    amount_cents: Mapped[int] = mapped_column(Integer)
-    price: Mapped[float] = mapped_column(Float)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
-
-
-class PricePoint(Base):
-    __tablename__ = "price_history"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    outcome_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("outcomes.id"), index=True
-    )
-    price_yes: Mapped[float] = mapped_column(Float)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
-
-
 class Comment(Base):
     __tablename__ = "comments"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
-    market_id: Mapped[str] = mapped_column(String(64), ForeignKey("markets.id"), index=True)
+    # legacy column from the prediction-market era; no longer written to
+    market_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    insight_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("insights.id"), index=True, nullable=True
+    )
     user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True)
     text: Mapped[str] = mapped_column(String(500))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
@@ -174,3 +65,107 @@ class Follow(Base):
     follower_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), primary_key=True)
     following_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), primary_key=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class Interest(Base):
+    """A topic tag a user follows for personalized recommendations (e.g. 'maize', 'forex')."""
+
+    __tablename__ = "user_interests"
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), primary_key=True)
+    tag: Mapped[str] = mapped_column(String(40), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class CommodityPrice(Base):
+    """A single KAMIS market-day price record for one commodity at one market."""
+
+    __tablename__ = "commodity_prices"
+    __table_args__ = (
+        UniqueConstraint("commodity", "market", "price_date", name="uq_commodity_market_date"),
+    )
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    commodity: Mapped[str] = mapped_column(String(80), index=True)
+    classification: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    grade: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    market: Mapped[str] = mapped_column(String(100), index=True)
+    county: Mapped[str] = mapped_column(String(40), index=True)
+    wholesale_price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    retail_price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    unit: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    supply_volume: Mapped[float | None] = mapped_column(Float, nullable=True)
+    price_date: Mapped[date] = mapped_column(Date, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class MacroIndicator(Base):
+    """A macroeconomic data point (inflation, CBR, forex rate, NSE index, ...)."""
+
+    __tablename__ = "macro_indicators"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    name: Mapped[str] = mapped_column(String(80), index=True)
+    value: Mapped[float] = mapped_column(Float)
+    unit: Mapped[str] = mapped_column(String(20), default="")
+    period: Mapped[str] = mapped_column(String(20))  # e.g. "2026-06" or "2026-06-22"
+    source: Mapped[str] = mapped_column(String(20), default="Admin")  # CBK|KNBS|AI|Admin
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+
+class Insight(Base):
+    """An AI- or admin-generated piece of economic commentary, forecast, or recommendation."""
+
+    __tablename__ = "insights"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    kind: Mapped[str] = mapped_column(String(20), index=True)  # commentary|forecast|recommendation
+    title: Mapped[str] = mapped_column(String(200))
+    body: Mapped[str] = mapped_column(Text)
+    category: Mapped[str] = mapped_column(String(40), index=True, default="Macro")
+    related_commodity: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    related_indicator: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    sentiment: Mapped[str | None] = mapped_column(String(10), nullable=True)  # bullish|bearish|neutral
+    sources: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON list
+    generated_by: Mapped[str] = mapped_column(String(10), default="ai")  # ai|admin
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+
+class EconomicBriefing(Base):
+    """One AI-generated daily 'Chief Economist' report. All structured
+    sections are stored as JSON text — the schema is intentionally flexible
+    since it mirrors a long-form report rather than a relational entity."""
+
+    __tablename__ = "economic_briefings"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    briefing_date: Mapped[date] = mapped_column(Date, unique=True, index=True)
+    health_score: Mapped[int] = mapped_column(Integer)
+    previous_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    score_trend: Mapped[str] = mapped_column(String(10), default="flat")  # up|down|flat
+    executive_summary: Mapped[str] = mapped_column(Text, default="")
+    key_drivers: Mapped[str] = mapped_column(Text, default="[]")  # JSON list[str]
+    country_comparison: Mapped[str] = mapped_column(Text, default="[]")  # JSON list[dict]
+    kenya_strengths: Mapped[str] = mapped_column(Text, default="[]")  # JSON list[str]
+    kenya_weaknesses: Mapped[str] = mapped_column(Text, default="[]")  # JSON list[str]
+    sector_impacts: Mapped[str] = mapped_column(Text, default="[]")  # JSON list[dict]
+    personal_finance: Mapped[str] = mapped_column(Text, default="{}")  # JSON dict
+    investment_ideas: Mapped[str] = mapped_column(Text, default="{}")  # JSON dict
+    austrian_view: Mapped[str] = mapped_column(Text, default="")
+    classical_view: Mapped[str] = mapped_column(Text, default="")
+    government_recommendations: Mapped[str] = mapped_column(Text, default="[]")  # JSON list[str]
+    business_recommendations: Mapped[str] = mapped_column(Text, default="[]")  # JSON list[str]
+    household_recommendations: Mapped[str] = mapped_column(Text, default="[]")  # JSON list[str]
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+
+class BillAnalysis(Base):
+    """An AI clause-by-clause breakdown of a Finance Bill (or similar), run
+    on-demand by an admin since the source PDF only changes occasionally."""
+
+    __tablename__ = "bill_analyses"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    title: Mapped[str] = mapped_column(String(200))
+    source_url: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(12), default="processing", index=True)  # processing|done|failed
+    overall_summary: Mapped[str] = mapped_column(Text, default="")
+    clauses: Mapped[str] = mapped_column(Text, default="[]")  # JSON list[dict]
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)

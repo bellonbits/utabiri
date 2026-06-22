@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
-from ..models import AuditLog, User, Wallet
+from ..models import AuditLog, User
 from ..security import create_token, get_current_user, hash_password, verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -64,7 +64,6 @@ async def register(body: RegisterIn, db: AsyncSession = Depends(get_db)):
     )
     db.add(user)
     await db.flush()
-    db.add(Wallet(user_id=user.id))
     db.add(AuditLog(action="auth.register", user_id=user.id))
     await db.commit()
 

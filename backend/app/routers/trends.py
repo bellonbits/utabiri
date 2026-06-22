@@ -21,7 +21,7 @@ TTL_SECONDS = 1800  # refresh at most every 30 minutes
 _cache: dict[str, Any] = {"at": 0.0, "data": None}
 
 
-async def _fetch_headlines() -> list[dict[str, str]]:
+async def fetch_headlines() -> list[dict[str, str]]:
     async with httpx.AsyncClient(timeout=30.0) as c:
         r = await c.get(f"{FRONTEND_URL}/api/news")
         r.raise_for_status()
@@ -40,7 +40,7 @@ async def trends():
         return _cache["data"]
 
     try:
-        headlines = await _fetch_headlines()
+        headlines = await fetch_headlines()
     except Exception:
         headlines = []
     if not headlines:
