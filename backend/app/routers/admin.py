@@ -1,6 +1,7 @@
 import asyncio
 import json
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
@@ -33,7 +34,10 @@ class AnalyzeBillIn(BaseModel):
 async def trigger_kamis_ingest(
     admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db)
 ):
-    result = await kamis.ingest_latest(db)
+    try:
+        result = await kamis.ingest_latest(db)
+    except httpx.HTTPError as e:
+        raise HTTPException(502, f"Could not reach KAMIS: {e!r}")
     db.add(AuditLog(action="admin.kamis_ingest", user_id=admin.id, metadata_json=json.dumps(result)))
     await db.commit()
     return result
