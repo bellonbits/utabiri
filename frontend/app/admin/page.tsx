@@ -103,10 +103,14 @@ export default function AdminPage() {
   const ingestNow = async () => {
     setIngestBusy(true);
     await run(async () => {
-      const r = await api<{ rows_inserted: number; products: number }>("/admin/kamis/ingest", {
-        method: "POST",
-      });
-      return `Ingested ${r.rows_inserted} new price rows across ${r.products} commodities`;
+      // kamis.kilimo.go.ke blocks this backend's VPS IP at the network level,
+      // so ingestion runs via a Vercel-hosted scraper instead (see
+      // frontend/app/api/kamis-sync) — this just triggers that on demand.
+      const r = await api<{ rows_inserted: number; commodities_matched: number }>(
+        "/admin/kamis/trigger-vercel-sync",
+        { method: "POST" },
+      );
+      return `Synced ${r.rows_inserted} new price rows across ${r.commodities_matched} commodities`;
     });
     setIngestBusy(false);
   };
@@ -209,11 +213,11 @@ export default function AdminPage() {
             <div className="min-w-0 flex-1">
               <h2 className="text-base font-bold">KAMIS price ingestion</h2>
               <p className="text-xs text-mut">
-                Runs automatically every 12 hours. Trigger a manual refresh any time.
+                kamis.kilimo.go.ke blocks this server&apos;s IP, so a Vercel Cron Job scrapes it instead (runs automatically every 6h, capped to once/day on the Hobby plan). Trigger a sync on demand any time.
               </p>
             </div>
             <button onClick={ingestNow} disabled={ingestBusy} className="rounded-full bg-accent px-5 py-2 text-sm font-bold text-white transition hover:bg-accent-2 disabled:opacity-50">
-              {ingestBusy ? "Ingesting…" : "Ingest now"}
+              {ingestBusy ? "Syncing… (~20s)" : "Sync now"}
             </button>
           </div>
         </Card>

@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
@@ -15,6 +16,9 @@ from ..services import bill_analysis, briefing, kamis
 from .trends import fetch_headlines
 
 router = APIRouter(prefix="/admin", tags=["admin"])
+
+VERCEL_SYNC_URL = os.environ.get("VERCEL_SYNC_URL", "")
+CRON_SECRET = os.environ.get("CRON_SECRET", "")
 
 
 class GenerateIn(BaseModel):
@@ -34,11 +38,38 @@ class AnalyzeBillIn(BaseModel):
 async def trigger_kamis_ingest(
     admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db)
 ):
+    """Direct VPS->KAMIS scrape. kamis.kilimo.go.ke blocks this VPS's IP at
+    the TCP level (confirmed via a raw connect test), so this will reliably
+    502 in production — kept only in case the block is ever lifted, or for
+    environments where it isn't blocked. Use /admin/kamis/trigger-vercel-sync
+    for the path that actually works."""
     try:
         result = await kamis.ingest_latest(db)
     except httpx.HTTPError as e:
         raise HTTPException(502, f"Could not reach KAMIS: {e!r}")
     db.add(AuditLog(action="admin.kamis_ingest", user_id=admin.id, metadata_json=json.dumps(result)))
+    await db.commit()
+    return result
+
+
+@router.post("/kamis/trigger-vercel-sync")
+async def trigger_vercel_kamis_sync(
+    admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db)
+):
+    """Calls the Vercel-hosted scraper (app/api/kamis-sync) server-to-server.
+    That route is gated by CRON_SECRET so only Vercel's own cron invocations
+    or this backend (which also holds the secret) can trigger it — keeps it
+    closed to the public while still letting an admin run it on demand."""
+    if not VERCEL_SYNC_URL or not CRON_SECRET:
+        raise HTTPException(500, "VERCEL_SYNC_URL / CRON_SECRET not configured")
+    try:
+        async with httpx.AsyncClient(timeout=70.0) as client:
+            r = await client.get(VERCEL_SYNC_URL, headers={"Authorization": f"Bearer {CRON_SECRET}"})
+        r.raise_for_status()
+        result = r.json()
+    except httpx.HTTPError as e:
+        raise HTTPException(502, f"Vercel sync call failed: {e!r}")
+    db.add(AuditLog(action="admin.kamis_vercel_sync", user_id=admin.id, metadata_json=json.dumps(result)))
     await db.commit()
     return result
 
