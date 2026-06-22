@@ -7,24 +7,17 @@ import { gradientFor } from "@/lib/data";
 type Row = {
   rank: number;
   display_name: string;
-  profit_cents: number;
-  volume_cents: number;
+  followers: number;
+  comments: number;
 };
 
-function fmtKes(cents: number): string {
-  const kes = cents / 100;
-  if (kes >= 1_000_000) return `KES ${(kes / 1_000_000).toFixed(1)}M`;
-  if (kes >= 1_000) return `KES ${Math.round(kes / 1_000)}K`;
-  return `KES ${Math.round(kes)}`;
-}
-
-/** Live leaderboard snippet; renders nothing until there are traders. */
-export function TopTraders() {
+/** Live leaderboard snippet; renders nothing until there are followed users. */
+export function TopContributors() {
   const [rows, setRows] = useState<Row[]>([]);
 
   useEffect(() => {
     api<{ items: Row[] }>("/leaderboard", { token: null })
-      .then((r) => setRows(r.items.filter((x) => x.volume_cents > 0)))
+      .then((r) => setRows(r.items.filter((x) => x.followers > 0 || x.comments > 0)))
       .catch(() => {});
   }, []);
 
@@ -32,7 +25,7 @@ export function TopTraders() {
   return (
     <section className="rounded-xl border border-line bg-panel p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h4 className="text-sm font-bold">Top Traders</h4>
+        <h4 className="text-sm font-bold">Top Contributors</h4>
         <a
           href="/leaderboard"
           className="text-xs font-semibold text-mut hover:text-white"
@@ -54,7 +47,7 @@ export function TopTraders() {
             <div className="min-w-0">
               <p className="truncate text-xs font-semibold">{u.display_name}</p>
               <p className="truncate text-[11px] text-mut">
-                {fmtKes(u.volume_cents)}
+                {u.followers} followers
               </p>
             </div>
           </li>

@@ -1,11 +1,14 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, API_URL, getToken } from "@/lib/api";
 import { clearSession, setSession, useSession } from "@/lib/session";
+import { categories } from "@/lib/categories";
 import { Avatar } from "@/components/avatar";
 import { btnCls, Card, Field, inputCls, Notice, Shell } from "@/components/shell";
+
+const SUGGESTED_TAGS = ["maize", "forex", "dairy", "tea", "coffee", "fuel", "nse"];
 
 export default function SettingsPage() {
   const user = useSession();
@@ -15,6 +18,13 @@ export default function SettingsPage() {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [interests, setInterests] = useState<string[]>([]);
+  const [newTag, setNewTag] = useState("");
+
+  useEffect(() => {
+    if (!user) return;
+    api<{ items: string[] }>("/users/me/interests").then((r) => setInterests(r.items)).catch(() => {});
+  }, [user]);
 
   if (!user) {
     return (
@@ -73,6 +83,25 @@ export default function SettingsPage() {
     }
   };
 
+  const addInterest = async (tag: string) => {
+    const clean = tag.trim().toLowerCase();
+    if (!clean || interests.includes(clean)) return;
+    try {
+      await api("/users/me/interests", { method: "POST", body: { tag: clean } });
+      setInterests((prev) => [...prev, clean]);
+      setNewTag("");
+    } catch (e) {
+      setMsg({ ok: false, text: e instanceof Error ? e.message : "Failed to add interest" });
+    }
+  };
+
+  const removeInterest = async (tag: string) => {
+    try {
+      await api(`/users/me/interests/${encodeURIComponent(tag)}`, { method: "DELETE" });
+      setInterests((prev) => prev.filter((t) => t !== tag));
+    } catch {}
+  };
+
   return (
     <Shell title="Settings">
       <div className="flex flex-col gap-4">
@@ -123,7 +152,7 @@ export default function SettingsPage() {
             </div>
             <div className="flex justify-between py-2.5">
               <dt className="text-mut">Role</dt>
-              <dd className="font-semibold">{user.is_admin ? "Admin" : "Trader"}</dd>
+              <dd className="font-semibold">{user.is_admin ? "Admin" : "Member"}</dd>
             </div>
           </dl>
           <div className="mt-4 grid gap-2 sm:max-w-sm">
@@ -144,21 +173,51 @@ export default function SettingsPage() {
 
         {msg && <Notice ok={msg.ok} text={msg.text} />}
 
-        {/* Notifications */}
+        {/* Interests */}
         <Card>
-          <h2 className="mb-3 text-base font-bold">Notifications</h2>
-          {["Trade confirmations", "Market resolutions", "Deposit receipts"].map((label) => (
-            <label
-              key={label}
-              className="flex items-center justify-between border-b border-line/60 py-2.5 text-sm last:border-0"
-            >
-              <span>{label}</span>
-              <input type="checkbox" defaultChecked className="h-4 w-4 accent-[#2f6fed]" />
-            </label>
-          ))}
-          <p className="mt-3 text-xs text-mut-2">
-            Email delivery activates once a Resend API key is configured.
+          <h2 className="mb-1 text-base font-bold">My interests</h2>
+          <p className="mb-3 text-xs text-mut">
+            Follow commodities, indicators or categories to personalize your insight feed.
           </p>
+          {interests.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-2">
+              {interests.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => removeInterest(tag)}
+                  className="group flex items-center gap-1.5 rounded-full border border-line bg-panel-2 px-3 py-1 text-sm font-semibold capitalize transition hover:border-down"
+                >
+                  {tag}
+                  <span className="text-mut-2 group-hover:text-down">×</span>
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              value={newTag}
+              onChange={(e) => setNewTag(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") addInterest(newTag); }}
+              placeholder="e.g. maize, forex, dairy…"
+              className={inputCls}
+            />
+            <button onClick={() => addInterest(newTag)} disabled={!newTag.trim()} className="shrink-0 rounded-lg bg-accent px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">
+              Add
+            </button>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {[...categories.map((c) => c.slug), ...SUGGESTED_TAGS]
+              .filter((t) => !interests.includes(t.toLowerCase()))
+              .map((t) => (
+                <button
+                  key={t}
+                  onClick={() => addInterest(t)}
+                  className="rounded-full border border-dashed border-line px-3 py-1 text-xs font-semibold text-mut hover:border-accent hover:text-accent-2"
+                >
+                  + {t}
+                </button>
+              ))}
+          </div>
         </Card>
 
         <Card>

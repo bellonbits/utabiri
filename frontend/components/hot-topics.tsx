@@ -1,43 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { api, type ApiMarket } from "@/lib/api";
-import { categories } from "@/lib/categories";
+import { useEffect, useState } from "react";
+import { api, type ApiInsight } from "@/lib/api";
 import { ChevronRightIcon, PulseIcon, SparkIcon } from "@/components/icons";
 
-function fmtVol(cents: number): string {
-  const kes = cents / 100;
-  if (kes >= 1_000_000) return `KES ${(kes / 1_000_000).toFixed(1)}M`;
-  if (kes >= 1_000) return `KES ${Math.round(kes / 1_000)}K`;
-  return `KES ${Math.round(kes)}`;
-}
-
-/** Promo card + ranked topics by live volume, Polymarket-style right rail. */
+/** Promo card + most recent insight categories, Polymarket-style right rail. */
 export function HotTopics() {
-  const [live, setLive] = useState<ApiMarket[]>([]);
+  const [items, setItems] = useState<ApiInsight[]>([]);
 
   useEffect(() => {
-    api<{ items: ApiMarket[] }>("/markets", { token: null })
-      .then((r) => setLive(r.items))
+    api<{ items: ApiInsight[] }>("/insights?per_page=20", { token: null })
+      .then((r) => setItems(r.items))
       .catch(() => {});
   }, []);
 
-  const topics = useMemo(() => {
-    const byCat = new Map<string, number>();
-    for (const m of live) {
-      byCat.set(m.category, (byCat.get(m.category) ?? 0) + m.volume_cents);
-    }
-    return Array.from(byCat.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([label, vol]) => ({
-        label,
-        vol,
-        slug:
-          categories.find((c) => c.match.includes(label))?.slug ?? "politics",
-      }));
-  }, [live]);
+  const topics = Array.from(new Set(items.map((i) => i.category))).slice(0, 5);
 
   return (
     <div className="flex flex-col gap-3">
@@ -50,43 +28,38 @@ export function HotTopics() {
           <SparkIcon width={20} height={20} />
         </span>
         <h3 className="mt-3 text-lg font-extrabold leading-tight">
-          Build an AFCON combo
+          Get personalized advice
         </h3>
         <p className="mt-1 text-xs text-white/70">
-          Combine multiple predictions in a combo to win big
+          Follow topics like maize or forex for tailored recommendations
         </p>
-        <button className="mt-3 w-full rounded-full bg-accent py-2.5 text-sm font-bold text-white transition hover:bg-accent-2">
-          Get started
-        </button>
+        <Link
+          href="/settings"
+          className="mt-3 block w-full rounded-full bg-accent py-2.5 text-center text-sm font-bold text-white transition hover:bg-accent-2"
+        >
+          Set my interests
+        </Link>
       </section>
 
       {/* hot topics */}
       <section className="rounded-xl border border-line bg-panel p-4">
         <Link
-          href="/"
+          href="/insights"
           className="flex items-center gap-1 text-base font-extrabold tracking-tight hover:text-accent-2"
         >
           Hot topics <ChevronRightIcon width={15} height={15} />
         </Link>
         <ul className="mt-2 divide-y divide-line/60">
-          {(topics.length
-            ? topics
-            : categories.slice(0, 5).map((c) => ({ label: c.label, vol: 0, slug: c.slug }))
-          ).map((t, i) => (
-            <li key={t.label}>
+          {topics.map((t, i) => (
+            <li key={t}>
               <Link
-                href={`/category/${t.slug}`}
+                href={`/insights?category=${encodeURIComponent(t)}`}
                 className="group flex items-center gap-3 py-2.5"
               >
                 <span className="w-4 text-sm font-bold text-mut-2">{i + 1}</span>
                 <span className="min-w-0 flex-1 truncate text-sm font-bold group-hover:text-accent-2">
-                  {t.label}
+                  {t}
                 </span>
-                {t.vol > 0 && (
-                  <span className="text-xs font-semibold text-mut">
-                    {fmtVol(t.vol)} today
-                  </span>
-                )}
                 <PulseIcon width={13} height={13} className="text-down" />
                 <ChevronRightIcon width={13} height={13} className="text-mut-2" />
               </Link>
@@ -94,7 +67,7 @@ export function HotTopics() {
           ))}
         </ul>
         <Link
-          href="/"
+          href="/insights"
           className="mt-2 block rounded-full border border-line py-2.5 text-center text-sm font-bold transition hover:bg-panel-2"
         >
           Explore all

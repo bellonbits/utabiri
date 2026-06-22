@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, API_URL } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { Avatar } from "@/components/avatar";
 
@@ -22,7 +22,7 @@ function timeAgo(iso: string): string {
   return `${Math.floor(s / 86400)}d`;
 }
 
-export function MarketComments({ marketId }: { marketId: string }) {
+export function ContentComments({ insightId }: { insightId: string }) {
   const user = useSession();
   const [comments, setComments] = useState<Comment[]>([]);
   const [text, setText] = useState("");
@@ -31,10 +31,10 @@ export function MarketComments({ marketId }: { marketId: string }) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(() => {
-    api<{ items: Comment[] }>(`/markets/${marketId}/comments`, { token: null })
+    api<{ items: Comment[] }>(`/insights/${insightId}/comments`, { token: null })
       .then((r) => setComments(r.items))
       .catch(() => {});
-  }, [marketId]);
+  }, [insightId]);
 
   // Initial load + live poll every 5 s
   useEffect(() => {
@@ -49,7 +49,7 @@ export function MarketComments({ marketId }: { marketId: string }) {
     setBusy(true);
     setErr(null);
     try {
-      const c = await api<Comment>(`/markets/${marketId}/comments`, {
+      const c = await api<Comment>(`/insights/${insightId}/comments`, {
         method: "POST",
         body: { text: text.trim() },
       });

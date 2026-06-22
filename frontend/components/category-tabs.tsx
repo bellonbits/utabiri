@@ -6,6 +6,7 @@ import { categories } from "@/lib/categories";
 
 export function CategoryTabs() {
   const pathname = usePathname();
+
   return (
     <div className="border-b border-line bg-ink">
       <div className="mx-auto flex max-w-screen-2xl items-center gap-1 px-4">
@@ -32,17 +33,12 @@ export function CategoryTabs() {
             For You
           </Link>
           {categories.map((c) => {
-            const href = `/category/${c.slug}`;
-            const active = pathname === href;
+            const href = `/insights?category=${encodeURIComponent(c.slug)}`;
             return (
               <Link
                 key={c.slug}
                 href={href}
-                className={`shrink-0 border-b-2 px-3 py-3 text-sm font-medium transition ${
-                  active
-                    ? "border-accent-2 text-white"
-                    : "border-transparent text-mut hover:text-white"
-                }`}
+                className="shrink-0 border-b-2 border-transparent px-3 py-3 text-sm font-medium text-mut transition hover:text-white"
               >
                 {c.label}
               </Link>

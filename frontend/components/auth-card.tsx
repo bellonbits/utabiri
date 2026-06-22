@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { setSession, type SessionUser } from "@/lib/session";
-import { EyeIcon, LockIcon, MailIcon } from "@/components/icons";
+import { EyeIcon, MailIcon } from "@/components/icons";
 import { Notice } from "@/components/shell";
 
 const inputWrap =
@@ -33,8 +33,8 @@ export function AuthScreen({ initialTab }: { initialTab: "signin" | "signup" }) 
           <span className="text-lg font-extrabold lowercase tracking-tight">utabiri</span>
         </div>
         <div className="absolute inset-x-10 bottom-8 rounded-2xl border border-white/10 bg-white/5 p-4 text-center text-xs text-white/70 backdrop-blur">
-          © 2026 Utabiri. Kenya&apos;s prediction market — trade what you know.
-          Trading involves risk; 18+ only. See our{" "}
+          © 2026 Utabiri. Kenya&apos;s economic forecast platform.
+          See our{" "}
           <Link href="/terms" className="underline hover:text-white">
             Terms
           </Link>{" "}
@@ -112,12 +112,12 @@ function AuthForms({ initialTab }: { initialTab: "signin" | "signup" }) {
       </div>
 
       <h1 className="mt-8 text-2xl font-extrabold tracking-tight">
-        {tab === "signin" ? "Welcome Back, Trader!" : "Join Utabiri"}
+        {tab === "signin" ? "Welcome Back!" : "Join Utabiri"}
       </h1>
       <p className="mt-1 text-sm text-mut">
         {tab === "signin"
           ? "We are happy to see you again"
-          : "Predict events. Earn when you're right."}
+          : "Get AI-powered insights on Kenya's economy."}
       </p>
 
       {/* tab toggle */}
@@ -241,23 +241,6 @@ function AuthForms({ initialTab }: { initialTab: "signin" | "signup" }) {
                 : "Create Account"}
         </button>
       </form>
-
-      {step === "form" && (
-        <>
-          <div className="my-6 flex items-center gap-4 text-xs font-semibold text-mut-2">
-            <span className="h-px flex-1 bg-line" /> OR{" "}
-            <span className="h-px flex-1 bg-line" />
-          </div>
-          <button
-            type="button"
-            onClick={() => setMsg({ ok: false, text: "M-Pesa one-tap login is coming soon" })}
-            className="flex w-full items-center justify-center gap-2 rounded-full border border-line bg-panel-2 py-3 text-sm font-bold text-white transition hover:border-accent/60"
-          >
-            <LockIcon width={15} height={15} className="text-up" />
-            Continue with M-Pesa number
-          </button>
-        </>
-      )}
     </div>
   );
 }

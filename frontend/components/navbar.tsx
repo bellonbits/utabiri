@@ -3,28 +3,21 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
-import { clearSession, fmtKES, useSession } from "@/lib/session";
-import { BellIcon, GiftIcon, MenuIcon, SearchIcon, XIcon } from "@/components/icons";
+import { clearSession, useSession } from "@/lib/session";
+import { MenuIcon, SearchIcon, XIcon } from "@/components/icons";
 
 const links = [
-  { label: "Markets", href: "/" },
-  { label: "Portfolio", href: "/portfolio" },
-  { label: "Wallet", href: "/wallet" },
+  { label: "Briefing", href: "/briefing" },
+  { label: "Insights", href: "/insights" },
+  { label: "Commodities", href: "/commodities" },
+  { label: "Macro", href: "/macro" },
+  { label: "Bills", href: "/bills" },
   { label: "Leaderboard", href: "/leaderboard" },
 ];
 
 export function Navbar() {
   const user = useSession();
-  const [balance, setBalance] = useState<number | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-
-  useEffect(() => {
-    if (!user) { setBalance(null); return; }
-    api<{ balance_cents: number }>("/wallet")
-      .then((w) => setBalance(w.balance_cents))
-      .catch(() => setBalance(null));
-  }, [user]);
 
   // Close menu on route change (body scroll lock)
   useEffect(() => {
@@ -72,12 +65,6 @@ export function Navbar() {
                 Admin
               </Link>
             )}
-            <Link
-              href="#"
-              className="ml-1 flex items-center gap-1.5 rounded-full border border-line px-3.5 py-1.5 text-sm font-medium text-gold transition hover:border-gold/60"
-            >
-              <GiftIcon width={14} height={14} /> Rewards
-            </Link>
           </nav>
 
           {/* desktop search */}
@@ -90,27 +77,9 @@ export function Navbar() {
             <kbd className="rounded border border-line px-1.5 text-xs text-mut-2">/</kbd>
           </div>
 
-          <Link
-            href="/notifications"
-            className="relative ml-auto rounded-md p-2 text-mut hover:text-white lg:ml-0"
-          >
-            <BellIcon />
-            <span className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-white">
-              1
-            </span>
-          </Link>
-
           {/* desktop auth */}
           {user ? (
-            <div className="hidden items-center gap-2 md:flex">
-              {balance !== null && (
-                <Link
-                  href="/wallet"
-                  className="rounded-lg border border-line bg-panel px-3 py-1.5 text-sm font-bold text-up"
-                >
-                  {fmtKES(balance)}
-                </Link>
-              )}
+            <div className="hidden items-center gap-2 md:flex md:ml-auto lg:ml-0">
               <Link
                 href="/profile"
                 className="max-w-[120px] truncate rounded-lg px-2 py-1.5 text-sm font-semibold text-white hover:bg-panel"
@@ -125,7 +94,7 @@ export function Navbar() {
               </button>
             </div>
           ) : (
-            <div className="hidden items-center gap-2 md:flex">
+            <div className="hidden items-center gap-2 md:flex md:ml-auto lg:ml-0">
               <Link
                 href="/login"
                 className="rounded-lg px-3 py-1.5 text-sm font-semibold text-mut transition hover:text-white"
@@ -144,7 +113,7 @@ export function Navbar() {
           {/* hamburger */}
           <button
             onClick={() => setMenuOpen((o) => !o)}
-            className="rounded-md p-2 text-mut hover:text-white md:hidden"
+            className="ml-auto rounded-md p-2 text-mut hover:text-white md:ml-0 md:hidden"
             aria-label="Toggle menu"
           >
             {menuOpen ? <XIcon /> : <MenuIcon />}
@@ -192,13 +161,6 @@ export function Navbar() {
                   Admin
                 </Link>
               )}
-              <Link
-                href="#"
-                onClick={close}
-                className="flex items-center gap-2 rounded-xl px-4 py-3.5 text-base font-semibold text-gold hover:bg-panel"
-              >
-                <GiftIcon width={16} height={16} /> Rewards
-              </Link>
             </nav>
 
             {/* auth section */}
@@ -206,18 +168,13 @@ export function Navbar() {
               {user ? (
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-bold">{user.display_name}</p>
-                      {balance !== null && (
-                        <p className="text-xs font-semibold text-up">{fmtKES(balance)}</p>
-                      )}
-                    </div>
+                    <p className="text-sm font-bold">{user.display_name}</p>
                     <Link
-                      href="/wallet"
+                      href="/settings"
                       onClick={close}
                       className="rounded-lg bg-accent px-4 py-2 text-sm font-bold text-white"
                     >
-                      Deposit
+                      Settings
                     </Link>
                   </div>
                   <button

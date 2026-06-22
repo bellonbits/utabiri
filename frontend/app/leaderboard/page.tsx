@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { fmtKES, useSession } from "@/lib/session";
+import { useSession } from "@/lib/session";
 import { Avatar } from "@/components/avatar";
 import { Card, Shell } from "@/components/shell";
 
@@ -12,9 +12,8 @@ type Row = {
   user_id: string;
   display_name: string;
   avatar_url: string | null;
-  profit_cents: number;
-  volume_cents: number;
-  total_trades: number;
+  followers: number;
+  comments: number;
 };
 
 export default function LeaderboardPage() {
@@ -45,12 +44,12 @@ export default function LeaderboardPage() {
   };
 
   return (
-    <Shell title="Leaderboard" subtitle="Kenya's sharpest forecasters, ranked by realized profit">
+    <Shell title="Leaderboard" subtitle="Kenya's most-followed economics contributors">
       <Card>
         {rows === null ? (
           <p className="text-sm text-mut">Loading…</p>
         ) : rows.length === 0 ? (
-          <p className="text-sm text-mut">No traders yet — be the first.</p>
+          <p className="text-sm text-mut">No contributors yet — be the first.</p>
         ) : (
           <ul className="divide-y divide-line/60">
             {rows.map((r) => {
@@ -77,15 +76,11 @@ export default function LeaderboardPage() {
                       {me && <span className="ml-2 text-xs font-semibold text-accent-2">you</span>}
                     </Link>
                     <p className="text-xs text-mut-2">
-                      {r.total_trades} trades · {fmtKES(r.volume_cents)} vol
+                      {r.comments} comments
                     </p>
                   </div>
-                  <span
-                    className={`text-sm font-extrabold ${
-                      r.profit_cents >= 0 ? "text-up" : "text-down"
-                    }`}
-                  >
-                    {r.profit_cents >= 0 ? "+" : ""}{fmtKES(r.profit_cents)}
+                  <span className="text-sm font-extrabold text-up">
+                    {r.followers} followers
                   </span>
                   {!me && user && (
                     <button

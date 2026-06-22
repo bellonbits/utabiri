@@ -7,14 +7,14 @@ import {
   HomeIcon,
   MenuIcon,
   PulseIcon,
-  TrendUpIcon,
+  WheatIcon,
 } from "@/components/icons";
 
 const items = [
   { label: "Home", href: "/", Icon: HomeIcon },
-  { label: "Portfolio", href: "/portfolio", Icon: TrendUpIcon },
-  { label: "Wallet", href: "/wallet", Icon: GridIcon },
-  { label: "Ranks", href: "/leaderboard", Icon: PulseIcon },
+  { label: "Commodities", href: "/commodities", Icon: WheatIcon },
+  { label: "Macro", href: "/macro", Icon: GridIcon },
+  { label: "Insights", href: "/insights", Icon: PulseIcon },
   { label: "More", href: "/settings", Icon: MenuIcon },
 ];
 

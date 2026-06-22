@@ -14,33 +14,32 @@ const sections: { heading: string; body: string[] }[] = [
     heading: "2. Data we collect",
     body: [
       "Account data: full name, email address and password (stored only as a salted hash).",
-      "Payment data: the M-Pesa phone number you provide for deposits and withdrawals, transaction amounts and payment references from our payment provider. We never see or store your M-Pesa PIN.",
-      "Trading data: your positions, trades, wallet balance and market activity.",
+      "Activity data: comments you post, users you follow, and the interest tags you set for personalized insights.",
       "Technical data: IP address, device and browser information, and security logs used to protect your account.",
     ],
   },
   {
     heading: "3. Why we process it",
     body: [
-      "To operate your account and wallet, execute trades, resolve markets and pay out winnings; to verify your email; to detect fraud, market manipulation and abuse; to meet legal obligations including anti-money-laundering and tax requirements; and to send service notifications such as deposit receipts and resolution alerts.",
+      "To operate your account, personalize the insights and recommendations you see, verify your email, detect fraud and abuse, meet legal obligations, and send service notifications.",
     ],
   },
   {
     heading: "4. Sharing",
     body: [
-      "We share data only with: our payment provider (to process M-Pesa transactions), our email delivery provider (to send service messages), and regulators or law enforcement where the law requires. We do not sell your personal data.",
+      "We share data only with our email delivery provider (to send service messages) and regulators or law enforcement where the law requires. We do not sell your personal data.",
     ],
   },
   {
     heading: "5. Retention",
     body: [
-      "Account and transaction records are kept for as long as your account is active and thereafter for the period required by Kenyan financial-record and tax laws. Security logs are kept for up to 12 months.",
+      "Account and activity records are kept for as long as your account is active and thereafter for the period required by Kenyan law. Security logs are kept for up to 12 months.",
     ],
   },
   {
     heading: "6. Security",
     body: [
-      "Passwords are hashed with a modern memory-hard algorithm; traffic is encrypted in transit; payment webhooks are signature-verified; and sensitive actions are audit-logged. No system is perfectly secure — protect your password and report any suspicious activity immediately.",
+      "Passwords are hashed with a modern memory-hard algorithm and traffic is encrypted in transit. No system is perfectly secure — protect your password and report any suspicious activity immediately.",
     ],
   },
   {
@@ -67,10 +66,6 @@ export default function PrivacyPage() {
   return (
     <Shell title="Privacy Policy" subtitle="Last updated: June 2026">
       <Card className="space-y-6">
-        <p className="rounded-lg bg-gold/10 px-3 py-2 text-sm font-semibold text-gold">
-          Draft for review — register with the ODPC and have counsel confirm
-          this policy before real-money launch.
-        </p>
         {sections.map((s) => (
           <section key={s.heading}>
             <h2 className="text-base font-bold">{s.heading}</h2>

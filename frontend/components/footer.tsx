@@ -3,18 +3,18 @@ import Link from "next/link";
 import { categories } from "@/lib/categories";
 
 const platform = [
-  { label: "Markets", href: "/" },
-  { label: "Portfolio", href: "/portfolio" },
-  { label: "Wallet", href: "/wallet" },
+  { label: "Daily Briefing", href: "/briefing" },
+  { label: "Insights", href: "/insights" },
+  { label: "Commodities", href: "/commodities" },
+  { label: "Macro", href: "/macro" },
+  { label: "Bill Analysis", href: "/bills" },
   { label: "Leaderboard", href: "/leaderboard" },
-  { label: "Notifications", href: "/notifications" },
   { label: "Profile", href: "/profile" },
 ];
 
 const support = [
   { label: "Terms of Use", href: "/terms" },
   { label: "Privacy Policy", href: "/privacy" },
-  { label: "Responsible Trading", href: "/terms" },
   { label: "Contact us", href: "mailto:support@utabiri.co.ke" },
   { label: "Help Center", href: "#" },
 ];
@@ -39,31 +39,31 @@ export function Footer() {
               </span>
             </Link>
             <p className="mt-3 text-sm font-semibold text-mut">
-              Kenya&apos;s Prediction Market
+              Kenya&apos;s Economic Forecast Platform
             </p>
             <p className="mt-1 max-w-xs text-xs leading-relaxed text-mut-2">
-              Trade YES/NO on politics, sports and the economy. Deposit and
-              withdraw with M-Pesa.
+              Commodity prices, macro indicators, and AI-generated commentary
+              and forecasts to help you understand Kenya&apos;s economy.
             </p>
           </div>
 
           {/* categories */}
           <div>
             <h3 className="text-sm font-bold text-mut">
-              Markets by category and topics
+              Insights by category
             </h3>
             <ul className="mt-4 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
               {categories.map((c) => (
                 <li key={c.slug}>
                   <Link
-                    href={`/category/${c.slug}`}
+                    href={`/insights?category=${encodeURIComponent(c.slug)}`}
                     className="group block"
                   >
                     <span className="text-sm font-semibold text-white/90 group-hover:text-accent-2">
                       {c.label}
                     </span>
                     <span className="block text-xs text-mut-2">
-                      Predictions &amp; odds
+                      Commentary &amp; forecasts
                     </span>
                   </Link>
                 </li>
@@ -121,17 +121,14 @@ export function Footer() {
           <a href="mailto:support@utabiri.co.ke" className="hover:text-white">
             support@utabiri.co.ke
           </a>
-          <span className="ml-auto rounded-full border border-line px-3 py-1 font-bold text-mut">
-            18+ only
-          </span>
         </div>
         <p className="mt-4 max-w-4xl text-xs leading-relaxed text-mut-2">
-          Trading involves substantial risk of loss — never trade with money
-          you cannot afford to lose. Utabiri is in the process of obtaining its
-          BCLB licence and is not yet authorised to offer real-money prediction
-          markets in Kenya; balances shown during the pilot are for testing.
-          Headlines displayed on this site link to and remain the property of
-          their respective publishers.
+          Utabiri provides AI-generated commentary, forecasts and
+          recommendations for informational purposes only — this is not
+          financial or agronomic advice. Commodity price data is sourced from
+          the Kenya Ministry of Agriculture&apos;s KAMIS bulletin. Headlines
+          displayed on this site link to and remain the property of their
+          respective publishers.
         </p>
       </div>
     </footer>

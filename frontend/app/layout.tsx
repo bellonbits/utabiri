@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Utabiri — Kenya's Prediction Market",
+  title: "Utabiri — Kenya's Economic Forecast Platform",
   description:
-    "Trade YES/NO on politics, sports and the economy. Deposit with M-Pesa.",
+    "Commodity prices, macro indicators and AI-generated commentary and forecasts for Kenya's economy.",
   icons: {
     icon: "/logo-mark.png",
     apple: "/logo-mark.png",
