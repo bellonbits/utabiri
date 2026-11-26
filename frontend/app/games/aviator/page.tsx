@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { GamesHub } from "../page";
 
-export default function AviatorRedirect() {
-  redirect("/games?tab=aviator");
+export default function AviatorPage() {
+  return <GamesHub defaultTab="aviator" />;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { BottomNav } from "@/components/bottom-nav";
 import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
@@ -10,13 +10,23 @@ import { ChessGame } from "@/components/games/chess-game";
 import { SpinTheWheelGame } from "@/components/games/wheel-game";
 import { useGameWallet } from "@/lib/game-wallet";
 
-type GameTab = "aviator" | "wheel" | "chess";
+export type GameTab = "aviator" | "wheel" | "chess";
 
-function GamesContent() {
+interface GamesHubProps {
+  defaultTab?: GameTab;
+}
+
+function GamesContent({ defaultTab = "aviator" }: GamesHubProps) {
   const searchParams = useSearchParams();
-  const initialTab = (searchParams.get("tab") as GameTab) || "aviator";
-  const [activeTab, setActiveTab] = useState<GameTab>(initialTab);
+  const tabFromQuery = searchParams ? (searchParams.get("tab") as GameTab) : null;
+  const [activeTab, setActiveTab] = useState<GameTab>(tabFromQuery || defaultTab);
   const { balance, refill } = useGameWallet();
+
+  useEffect(() => {
+    if (tabFromQuery && (tabFromQuery === "aviator" || tabFromQuery === "wheel" || tabFromQuery === "chess")) {
+      setActiveTab(tabFromQuery);
+    }
+  }, [tabFromQuery]);
 
   return (
     <main className="mx-auto max-w-screen-xl px-4 pb-24 pt-6 md:pb-12">
@@ -49,7 +59,7 @@ function GamesContent() {
           </div>
           <button
             onClick={refill}
-            className="rounded-xl bg-accent px-3.5 py-2 text-xs font-black text-white hover:bg-accent-2 transition shadow-xs active:scale-95"
+            className="rounded-xl bg-accent px-3.5 py-2 text-xs font-black text-white hover:bg-accent-2 transition shadow-xs active:scale-95 cursor-pointer"
             title="Claim daily bonus coins"
           >
             +500 Free
@@ -61,7 +71,7 @@ function GamesContent() {
       <div className="mt-6 flex flex-wrap gap-2 border-b border-line pb-4">
         <button
           onClick={() => setActiveTab("aviator")}
-          className={`flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-extrabold transition ${
+          className={`flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-extrabold transition cursor-pointer ${
             activeTab === "aviator"
               ? "bg-rose-600 text-white shadow-md shadow-rose-600/20"
               : "border border-line bg-panel text-slate-700 hover:bg-panel-2"
@@ -72,7 +82,7 @@ function GamesContent() {
 
         <button
           onClick={() => setActiveTab("wheel")}
-          className={`flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-extrabold transition ${
+          className={`flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-extrabold transition cursor-pointer ${
             activeTab === "wheel"
               ? "bg-amber-500 text-slate-900 shadow-md shadow-amber-500/20"
               : "border border-line bg-panel text-slate-700 hover:bg-panel-2"
@@ -83,7 +93,7 @@ function GamesContent() {
 
         <button
           onClick={() => setActiveTab("chess")}
-          className={`flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-extrabold transition ${
+          className={`flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-extrabold transition cursor-pointer ${
             activeTab === "chess"
               ? "bg-slate-900 text-white shadow-md shadow-slate-900/20"
               : "border border-line bg-panel text-slate-700 hover:bg-panel-2"
@@ -103,15 +113,19 @@ function GamesContent() {
   );
 }
 
-export default function GamesPage() {
+export function GamesHub({ defaultTab = "aviator" }: GamesHubProps) {
   return (
     <div className="min-h-dvh bg-ink">
       <Navbar />
-      <Suspense fallback={<div className="p-8 text-center text-sm text-mut">Loading Arcade…</div>}>
-        <GamesContent />
+      <Suspense fallback={<div className="p-12 text-center text-sm font-bold text-mut">Loading Arcade…</div>}>
+        <GamesContent defaultTab={defaultTab} />
       </Suspense>
       <Footer />
       <BottomNav />
     </div>
   );
+}
+
+export default function GamesPage() {
+  return <GamesHub defaultTab="aviator" />;
 }

@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { GamesHub } from "../page";
 
-export default function ChessRedirect() {
-  redirect("/games?tab=chess");
+export default function ChessPage() {
+  return <GamesHub defaultTab="chess" />;
 }

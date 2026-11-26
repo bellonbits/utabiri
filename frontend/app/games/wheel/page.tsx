@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { GamesHub } from "../page";
 
-export default function WheelRedirect() {
-  redirect("/games?tab=wheel");
+export default function WheelPage() {
+  return <GamesHub defaultTab="wheel" />;
 }
