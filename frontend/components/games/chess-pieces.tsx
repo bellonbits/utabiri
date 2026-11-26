@@ -143,3 +143,20 @@ export const ChessPieces = {
     ),
   },
 };
+
+export function ChessPiece({
+  type,
+  color,
+  size = 44,
+  className = "",
+}: {
+  type: "p" | "n" | "b" | "r" | "q" | "k";
+  color: "w" | "b";
+  size?: number;
+  className?: string;
+}) {
+  const Component = ChessPieces[color]?.[type];
+  if (!Component) return null;
+  return <Component size={size} className={className} />;
+}
+

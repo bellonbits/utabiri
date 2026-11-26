@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChessPieces } from "./chess-pieces";
+import { ChessPiece } from "./chess-pieces";
 import { sfx } from "@/lib/game-audio";
 import { useGameWallet } from "@/lib/game-wallet";
 import { CastleIcon, BotIcon, UserIcon, TrophyIcon, ShieldIcon, SlidersIcon, CheckCircleIcon } from "@/components/icons";
@@ -291,7 +291,7 @@ export function ChessGame() {
   const renderPiece = (p: Piece) => {
     return (
       <div className="h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center pointer-events-none select-none">
-        <ChessPieces type={p.type} color={p.color} />
+        <ChessPiece type={p.type} color={p.color} size={42} />
       </div>
     );
   };
