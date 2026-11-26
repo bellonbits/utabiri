@@ -13,18 +13,18 @@ interface Sector {
 }
 
 const SECTORS: Sector[] = [
-  { label: "50x MAX", multiplier: 50, color: "#831843" },
-  { label: "1.5x", multiplier: 1.5, color: "#312e81" },
-  { label: "10x", multiplier: 10, color: "#581c87" },
-  { label: "2.0x", multiplier: 2.0, color: "#1e1b4b" },
-  { label: "0x LOSS", multiplier: 0, color: "#1c1917" },
-  { label: "5.0x", multiplier: 5.0, color: "#701a75" },
-  { label: "1.2x", multiplier: 1.2, color: "#1e293b" },
-  { label: "25x MEGA", multiplier: 25, color: "#9d174d" },
-  { label: "3.0x", multiplier: 3.0, color: "#4c1d95" },
-  { label: "0.5x", multiplier: 0.5, color: "#292524" },
-  { label: "+500 COINS", multiplier: 0, fixedCoins: 500, color: "#7e22ce" },
-  { label: "2.5x", multiplier: 2.5, color: "#3730a3" },
+  { label: "50x MAX", multiplier: 50, color: "#be185d" },
+  { label: "1.5x", multiplier: 1.5, color: "#4338ca" },
+  { label: "10x", multiplier: 10, color: "#7e22ce" },
+  { label: "2.0x", multiplier: 2.0, color: "#3730a3" },
+  { label: "0x LOSS", multiplier: 0, color: "#475569" },
+  { label: "5.0x", multiplier: 5.0, color: "#a21caf" },
+  { label: "1.2x", multiplier: 1.2, color: "#334155" },
+  { label: "25x MEGA", multiplier: 25, color: "#e11d48" },
+  { label: "3.0x", multiplier: 3.0, color: "#6d28d9" },
+  { label: "0.5x", multiplier: 0.5, color: "#64748b" },
+  { label: "+500 COINS", multiplier: 0, fixedCoins: 500, color: "#9333ea" },
+  { label: "2.5x", multiplier: 2.5, color: "#4f46e5" },
 ];
 
 interface WheelWinner {
@@ -72,13 +72,13 @@ export function SpinTheWheelGame() {
 
     ctx.clearRect(0, 0, w, h);
 
-    // Outer Bezel
+    // Outer Bezel in clean light mode
     ctx.save();
     ctx.translate(center, center);
 
     ctx.beginPath();
     ctx.arc(0, 0, radius + 20, 0, Math.PI * 2);
-    ctx.fillStyle = "#111217";
+    ctx.fillStyle = "#ffffff";
     ctx.fill();
     ctx.lineWidth = 4;
     ctx.strokeStyle = "#ea580c";
@@ -87,7 +87,7 @@ export function SpinTheWheelGame() {
     ctx.beginPath();
     ctx.arc(0, 0, radius + 10, 0, Math.PI * 2);
     ctx.lineWidth = 2;
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+    ctx.strokeStyle = "#e2e8f0";
     ctx.stroke();
 
     // Wheel Pins
@@ -98,7 +98,7 @@ export function SpinTheWheelGame() {
       const py = Math.sin(pAngle) * (radius + 15);
       ctx.beginPath();
       ctx.arc(px, py, 3.5, 0, Math.PI * 2);
-      ctx.fillStyle = i % 2 === 0 ? "#f97316" : "#ffffff";
+      ctx.fillStyle = i % 2 === 0 ? "#ea580c" : "#94a3b8";
       ctx.fill();
     }
 
@@ -118,7 +118,7 @@ export function SpinTheWheelGame() {
       ctx.fill();
 
       // Divider line
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
@@ -143,7 +143,7 @@ export function SpinTheWheelGame() {
     ctx.lineTo(12, 0);
     ctx.lineTo(0, 24);
     ctx.closePath();
-    ctx.fillStyle = "#f97316";
+    ctx.fillStyle = "#ea580c";
     ctx.fill();
     ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 2;
@@ -155,7 +155,7 @@ export function SpinTheWheelGame() {
     ctx.translate(center, center);
     ctx.beginPath();
     ctx.arc(0, 0, 36, 0, Math.PI * 2);
-    ctx.fillStyle = "#18181b";
+    ctx.fillStyle = "#ffffff";
     ctx.fill();
     ctx.strokeStyle = "#ea580c";
     ctx.lineWidth = 3;
@@ -163,8 +163,8 @@ export function SpinTheWheelGame() {
 
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "900 12px sans-serif";
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "900 13px sans-serif";
     ctx.fillText("SPIN", 0, 0);
     ctx.restore();
   };
@@ -186,7 +186,6 @@ export function SpinTheWheelGame() {
     const targetSector = SECTORS[targetIdx];
     const arc = (2 * Math.PI) / SECTORS.length;
 
-    // Arrow is at the top (angle -Math.PI / 2)
     const targetAngle = -Math.PI / 2 - (targetIdx * arc + arc / 2);
     const currentRot = rotationRef.current % (2 * Math.PI);
     const fullTurns = 6 * 2 * Math.PI;
@@ -240,23 +239,23 @@ export function SpinTheWheelGame() {
   };
 
   return (
-    <div className="flex flex-col border border-stone-800 bg-[#0c0d10] text-white">
+    <div className="w-full border border-line bg-panel text-slate-900">
       {/* Top Strip */}
-      <div className="flex items-center justify-between gap-3 border-b border-stone-800 px-4 py-2.5 overflow-x-auto">
+      <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5 overflow-x-auto bg-panel-2">
         <div className="flex items-center gap-2 shrink-0">
-          <span className="flex items-center gap-1.5 text-amber-500 font-black text-lg tracking-tight">
-            <DiscIcon className="h-5 w-5 text-amber-500" /> Fortune Wheel
+          <span className="flex items-center gap-1.5 text-amber-600 font-black text-lg tracking-tight">
+            <DiscIcon className="h-5 w-5 text-amber-600" /> Fortune Wheel
           </span>
-          <span className="bg-amber-500/20 text-amber-400 px-2 py-0.5 text-[10px] font-extrabold uppercase">
+          <span className="border border-amber-200 bg-amber-50 text-amber-800 px-2 py-0.5 text-[10px] font-extrabold uppercase">
             96.5% RTP
           </span>
         </div>
 
         {/* Recent Spins Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto text-xs font-black">
-          <span className="text-[10px] uppercase font-bold text-stone-500 mr-1">History:</span>
+          <span className="text-[10px] uppercase font-bold text-mut mr-1">History:</span>
           {recentMultipliers.map((m, i) => (
-            <span key={i} className="rounded-full bg-[#1e2029] border border-stone-700 px-2.5 py-0.5 text-stone-300 shrink-0 text-[11px]">
+            <span key={i} className="rounded-full bg-panel border border-line px-2.5 py-0.5 text-slate-800 shrink-0 text-[11px] font-bold">
               {m}
             </span>
           ))}
@@ -264,16 +263,16 @@ export function SpinTheWheelGame() {
       </div>
 
       {/* Main Grid: Wheel Canvas (Left) + Betting & Winners (Right) */}
-      <div className="grid divide-y lg:divide-y-0 lg:divide-x divide-stone-800 lg:grid-cols-[1fr_320px]">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] divide-y lg:divide-y-0 lg:divide-x divide-line">
         {/* Center Arena */}
-        <div className="flex flex-col items-center justify-center p-6 bg-[#090a0d]">
+        <div className="flex flex-col items-center justify-center p-6 bg-ink">
           <div className="relative">
             <canvas ref={canvasRef} className="block max-w-full h-auto" />
           </div>
 
           {resultSector && (
             <div className={`mt-4 px-4 py-2 text-center text-sm font-black border ${
-              winAmount && winAmount > 0 ? "border-emerald-500/50 bg-emerald-950/30 text-emerald-400" : "border-stone-800 bg-stone-900 text-stone-400"
+              winAmount && winAmount > 0 ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-line bg-panel text-mut"
             }`}>
               {winAmount && winAmount > 0 ? (
                 <span>WON {winAmount} COINS! ({resultSector.label})</span>
@@ -285,12 +284,12 @@ export function SpinTheWheelGame() {
         </div>
 
         {/* Right Betting & History Panel */}
-        <div className="flex flex-col bg-[#111217]">
+        <div className="flex flex-col bg-panel">
           {/* Bet Console */}
-          <div className="p-4 border-b border-stone-800 space-y-3">
-            <div className="flex items-center justify-between text-xs font-bold text-stone-400">
+          <div className="p-4 border-b border-line space-y-3 bg-panel-2">
+            <div className="flex items-center justify-between text-xs font-bold text-mut">
               <span>WAGER AMOUNT</span>
-              <span>BALANCE: <strong className="text-white">{balance.toLocaleString()} Coins</strong></span>
+              <span>BALANCE: <strong className="text-slate-900">{balance.toLocaleString()} Coins</strong></span>
             </div>
 
             {/* Quick Amounts */}
@@ -300,7 +299,7 @@ export function SpinTheWheelGame() {
                   key={amt}
                   onClick={() => setStake(amt)}
                   className={`py-1.5 border transition cursor-pointer ${
-                    stake === amt ? "border-orange-500 bg-orange-500/20 text-orange-400" : "border-stone-700 bg-[#1a1c24] text-stone-300 hover:bg-[#222530]"
+                    stake === amt ? "border-orange-500 bg-orange-500 text-white font-black" : "border-line bg-panel text-slate-800 hover:bg-panel-2"
                   }`}
                 >
                   {amt}
@@ -309,17 +308,17 @@ export function SpinTheWheelGame() {
             </div>
 
             {/* Stepper Input */}
-            <div className="flex items-center justify-between border border-stone-700 bg-[#0c0d10] px-3 py-1.5">
+            <div className="flex items-center justify-between border border-line bg-panel px-3 py-1.5">
               <button
                 onClick={() => setStake((s) => Math.max(10, s - 50))}
-                className="h-7 w-7 bg-stone-800 text-stone-300 font-black text-sm hover:bg-stone-700 cursor-pointer"
+                className="h-7 w-7 bg-panel-2 text-slate-800 font-black text-sm hover:bg-line cursor-pointer"
               >
                 −
               </button>
-              <span className="font-black text-sm text-white">{stake} Coins</span>
+              <span className="font-black text-sm text-slate-900">{stake} Coins</span>
               <button
                 onClick={() => setStake((s) => s + 50)}
-                className="h-7 w-7 bg-stone-800 text-stone-300 font-black text-sm hover:bg-stone-700 cursor-pointer"
+                className="h-7 w-7 bg-panel-2 text-slate-800 font-black text-sm hover:bg-line cursor-pointer"
               >
                 +
               </button>
@@ -329,31 +328,31 @@ export function SpinTheWheelGame() {
             <button
               onClick={spin}
               disabled={spinning || stake > balance}
-              className="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 font-black text-sm tracking-wider uppercase hover:opacity-90 active:scale-98 transition disabled:opacity-50 cursor-pointer"
+              className="w-full py-3 bg-accent text-white font-black text-xs uppercase tracking-wider hover:bg-accent-2 transition disabled:opacity-50 cursor-pointer"
             >
               {spinning ? "SPINNING…" : `SPIN FOR ${stake} COINS`}
             </button>
           </div>
 
           {/* Recent Winners Table */}
-          <div className="flex-1 flex flex-col">
-            <div className="flex items-center justify-between px-4 py-2 border-b border-stone-800 text-[11px] font-black uppercase text-stone-400 bg-[#0e0f13]">
-              <span className="flex items-center gap-1.5"><TrophyIcon className="h-3.5 w-3.5 text-amber-500" /> Recent Payouts</span>
-              <span className="text-emerald-400 text-[10px]">Verified</span>
+          <div className="flex-1 flex flex-col bg-panel">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-line text-[11px] font-black uppercase text-mut bg-panel-2">
+              <span className="flex items-center gap-1.5"><TrophyIcon className="h-3.5 w-3.5 text-amber-600" /> Recent Payouts</span>
+              <span className="text-emerald-600 text-[10px]">Verified</span>
             </div>
 
-            <div className="divide-y divide-stone-800/60 text-xs font-medium">
+            <div className="divide-y divide-line text-xs font-medium">
               {RECENT_WINNERS.map((w, idx) => (
-                <div key={idx} className="flex items-center justify-between px-4 py-2 hover:bg-[#161820]">
+                <div key={idx} className="flex items-center justify-between px-4 py-2.5 hover:bg-panel-2">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-stone-400">{w.user}</span>
-                    <span className="rounded bg-indigo-950 border border-indigo-800 px-1 py-0.2 text-[10px] font-bold text-indigo-300">
+                    <span className="font-mono text-slate-700 font-bold">{w.user}</span>
+                    <span className="rounded bg-panel-2 border border-line px-1.5 py-0.5 text-[10px] font-bold text-slate-700">
                       {w.multiplier}
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="font-black text-emerald-400">+{w.payout} Coins</span>
-                    <span className="block text-[10px] text-stone-500">{w.time}</span>
+                    <span className="font-black text-emerald-600">+{w.payout} Coins</span>
+                    <span className="block text-[10px] text-mut">{w.time}</span>
                   </div>
                 </div>
               ))}
@@ -363,16 +362,16 @@ export function SpinTheWheelGame() {
       </div>
 
       {/* Provably Fair Bottom Strip */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-stone-800 bg-[#090a0d] px-4 py-2 text-[11px] text-stone-400">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line bg-panel-2 px-4 py-2 text-[11px] text-mut">
         <div className="flex items-center gap-2">
-          <ShieldIcon className="h-4 w-4 text-emerald-400" />
-          <span className="font-bold text-stone-300">Provably Fair SHA-256 Seed:</span>
-          <span className="font-mono text-[10px] text-stone-500 truncate max-w-[200px] md:max-w-[320px]">{roundSeed}</span>
+          <ShieldIcon className="h-4 w-4 text-emerald-600" />
+          <span className="font-bold text-slate-800">Provably Fair SHA-256 Seed:</span>
+          <span className="font-mono text-[10px] text-mut truncate max-w-[200px] md:max-w-[320px]">{roundSeed}</span>
         </div>
         <div className="flex items-center gap-3">
-          <span>Max Win: <strong className="text-amber-400">50x Multiplier</strong></span>
-          <span className="text-stone-600">|</span>
-          <span>RTP: <strong className="text-stone-200">96.5%</strong></span>
+          <span>Max Win: <strong className="text-amber-600">50x Multiplier</strong></span>
+          <span className="text-line">|</span>
+          <span>RTP: <strong className="text-slate-900">96.5%</strong></span>
         </div>
       </div>
     </div>

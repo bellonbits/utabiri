@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { sfx } from "@/lib/game-audio";
 import { useGameWallet } from "@/lib/game-wallet";
-import { ShieldIcon, PlaneIcon, CoinsIcon, ClockIcon, SlidersIcon } from "@/components/icons";
+import { ShieldIcon, PlaneIcon, CoinsIcon, ClockIcon } from "@/components/icons";
 
 type GameState = "WAITING" | "FLYING" | "CRASHED";
 
@@ -26,17 +26,17 @@ interface PlayerBet {
 }
 
 const INITIAL_PLAYERS: PlayerBet[] = [
-  { username: "b***u", initials: "BU", avatarBg: "bg-sky-700", bet: 96.15, cashedAt: 1.10, profit: 105.76 },
-  { username: "u***k", initials: "UK", avatarBg: "bg-amber-700", bet: 50.80 },
-  { username: "m***r", initials: "MR", avatarBg: "bg-purple-700", bet: 49.27 },
-  { username: "1****", initials: "1*", avatarBg: "bg-emerald-700", bet: 40.46 },
-  { username: "r***k", initials: "RK", avatarBg: "bg-rose-700", bet: 39.77 },
-  { username: "4***3", initials: "43", avatarBg: "bg-indigo-700", bet: 39.77 },
-  { username: "4***5", initials: "45", avatarBg: "bg-teal-700", bet: 39.77 },
-  { username: "1***4", initials: "14", avatarBg: "bg-orange-700", bet: 39.77 },
-  { username: "4***5", initials: "45", avatarBg: "bg-pink-700", bet: 28.41, cashedAt: 1.11, profit: 31.53 },
-  { username: "4***5", initials: "45", avatarBg: "bg-teal-700", bet: 27.27, cashedAt: 1.56, profit: 42.54 },
-  { username: "d***d", initials: "DD", avatarBg: "bg-slate-700", bet: 26.70 },
+  { username: "b***u", initials: "BU", avatarBg: "bg-sky-600 text-white", bet: 96.15, cashedAt: 1.10, profit: 105.76 },
+  { username: "u***k", initials: "UK", avatarBg: "bg-amber-600 text-white", bet: 50.80 },
+  { username: "m***r", initials: "MR", avatarBg: "bg-purple-600 text-white", bet: 49.27 },
+  { username: "1****", initials: "1*", avatarBg: "bg-emerald-600 text-white", bet: 40.46 },
+  { username: "r***k", initials: "RK", avatarBg: "bg-rose-600 text-white", bet: 39.77 },
+  { username: "4***3", initials: "43", avatarBg: "bg-indigo-600 text-white", bet: 39.77 },
+  { username: "4***5", initials: "45", avatarBg: "bg-teal-600 text-white", bet: 39.77 },
+  { username: "1***4", initials: "14", avatarBg: "bg-orange-600 text-white", bet: 39.77 },
+  { username: "4***5", initials: "45", avatarBg: "bg-pink-600 text-white", bet: 28.41, cashedAt: 1.11, profit: 31.53 },
+  { username: "4***5", initials: "45", avatarBg: "bg-teal-600 text-white", bet: 27.27, cashedAt: 1.56, profit: 42.54 },
+  { username: "d***d", initials: "DD", avatarBg: "bg-slate-600 text-white", bet: 26.70 },
 ];
 
 export function AviatorGame() {
@@ -53,7 +53,7 @@ export function AviatorGame() {
   const [players, setPlayers] = useState<PlayerBet[]>(INITIAL_PLAYERS);
   const [roundSeed, setRoundSeed] = useState("a8f4c2e19d7b63f0a92847cbb64098314e357912");
 
-  // Dual Bet Panels (matching Screenshot)
+  // Dual Bet Panels
   const [panel1, setPanel1] = useState<BetConsoleState>({
     amount: 100,
     active: false,
@@ -76,7 +76,6 @@ export function AviatorGame() {
   const startTimeRef = useRef(0);
   const animFrameRef = useRef<number | null>(null);
 
-  // Provably fair crash calculation
   const generateCrash = () => {
     const r = Math.random();
     if (r < 0.04) return 1.0;
@@ -93,7 +92,6 @@ export function AviatorGame() {
     startTimeRef.current = performance.now();
     setRoundSeed(Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join(""));
 
-    // Reset player cashouts for this round
     setPlayers((prev) =>
       prev.map((p) => ({
         ...p,
@@ -102,7 +100,6 @@ export function AviatorGame() {
       }))
     );
 
-    // Deduct active player stakes
     if (panel1.active) {
       modifyBalance(-panel1.amount);
       setPanel1((p) => ({ ...p, cashedOut: false, cashedMultiplier: 0 }));
@@ -141,7 +138,6 @@ export function AviatorGame() {
           lastPitch = time;
         }
 
-        // Live players cashout simulation
         setPlayers((prev) =>
           prev.map((p, i) => {
             if (!p.cashedAt && curM >= 1.1 + i * 0.18) {
@@ -155,7 +151,6 @@ export function AviatorGame() {
           })
         );
 
-        // Auto cashout checks
         setPanel1((p) => {
           if (p.active && !p.cashedOut && p.mode === "auto" && curM >= p.autoCashoutValue) {
             modifyBalance(p.amount * curM);
@@ -174,7 +169,6 @@ export function AviatorGame() {
           return p;
         });
 
-        // Crash check
         if (curM >= crashPointRef.current) {
           setGameState("CRASHED");
           sfx.playCrash();
@@ -197,7 +191,6 @@ export function AviatorGame() {
     }
   }, [gameState]);
 
-  // Cashout manual
   const cashout = (panelNum: 1 | 2) => {
     if (gameState !== "FLYING") return;
     if (panelNum === 1 && panel1.active && !panel1.cashedOut) {
@@ -214,7 +207,7 @@ export function AviatorGame() {
     }
   };
 
-  // Canvas drawing (matching Screenshot 1: Spribe Aviator)
+  // Canvas drawing in website light mode
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -227,14 +220,14 @@ export function AviatorGame() {
       const w = (canvas.width = canvas.parentElement?.clientWidth || 700);
       const h = (canvas.height = 360);
 
-      // Dark background
-      ctx.fillStyle = "#0c0d10";
+      // Light background matching website ink/panel
+      ctx.fillStyle = "#f8fafc";
       ctx.fillRect(0, 0, w, h);
 
-      // Sunburst radial rays from bottom left
+      // Subtle radial sunburst in soft gray
       ctx.save();
       ctx.translate(40, h - 30);
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
       ctx.lineWidth = 1.5;
       for (let angle = 0; angle <= Math.PI / 2; angle += Math.PI / 32) {
         ctx.beginPath();
@@ -244,8 +237,8 @@ export function AviatorGame() {
       }
       ctx.restore();
 
-      // Horizontal baseline and dot markers
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+      // Horizontal baseline and dot markers in light mode
+      ctx.strokeStyle = "#cbd5e1";
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(30, h - 30);
@@ -253,15 +246,15 @@ export function AviatorGame() {
       ctx.stroke();
 
       for (let x = 60; x < w - 20; x += 50) {
-        ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
+        ctx.fillStyle = "#94a3b8";
         ctx.beginPath();
         ctx.arc(x, h - 30, 2, 0, Math.PI * 2);
         ctx.fill();
       }
 
       if (gameState === "WAITING") {
-        ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
-        ctx.font = "bold 14px sans-serif";
+        ctx.fillStyle = "#64748b";
+        ctx.font = "bold 13px sans-serif";
         ctx.textAlign = "center";
         ctx.fillText("WAITING FOR NEXT ROUND", w / 2, h / 2 - 25);
 
@@ -271,10 +264,10 @@ export function AviatorGame() {
 
         // Progress bar
         const barW = 200;
-        ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
-        ctx.fillRect(w / 2 - barW / 2, h / 2 + 45, barW, 5);
+        ctx.fillStyle = "#e2e8f0";
+        ctx.fillRect(w / 2 - barW / 2, h / 2 + 45, barW, 6);
         ctx.fillStyle = "#e11d48";
-        ctx.fillRect(w / 2 - barW / 2, h / 2 + 45, barW * (countdown / 4), 5);
+        ctx.fillRect(w / 2 - barW / 2, h / 2 + 45, barW * (countdown / 4), 6);
       } else {
         const startX = 30;
         const startY = h - 30;
@@ -282,13 +275,13 @@ export function AviatorGame() {
         const endX = startX + progress * (w - 140);
         const endY = startY - progress * (h - 90);
 
-        // Filled red area under trajectory curve
+        // Filled light red area under trajectory curve
         ctx.beginPath();
         ctx.moveTo(startX, startY);
         ctx.quadraticCurveTo(startX + (endX - startX) * 0.45, startY, endX, endY);
         ctx.lineTo(endX, startY);
         ctx.closePath();
-        ctx.fillStyle = "rgba(225, 29, 72, 0.35)";
+        ctx.fillStyle = "rgba(225, 29, 72, 0.12)";
         ctx.fill();
 
         // Trajectory curve stroke
@@ -305,7 +298,6 @@ export function AviatorGame() {
         ctx.rotate(-0.28);
 
         if (gameState === "CRASHED") {
-          // Geometric star explosion (no emojis)
           ctx.strokeStyle = "#e11d48";
           ctx.fillStyle = "#f43f5e";
           ctx.lineWidth = 2;
@@ -359,7 +351,7 @@ export function AviatorGame() {
           ctx.fill();
 
           // Propeller Blade
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+          ctx.strokeStyle = "rgba(15, 23, 42, 0.7)";
           ctx.lineWidth = 2.5;
           ctx.beginPath();
           ctx.moveTo(24, -10);
@@ -368,9 +360,9 @@ export function AviatorGame() {
         }
         ctx.restore();
 
-        // Center Multiplier display
+        // Center Multiplier display in clean dark slate
         ctx.textAlign = "center";
-        ctx.fillStyle = gameState === "CRASHED" ? "#e11d48" : "#ffffff";
+        ctx.fillStyle = gameState === "CRASHED" ? "#e11d48" : "#0f172a";
         ctx.font = "900 64px sans-serif";
         ctx.fillText(
           gameState === "CRASHED" ? "FLEW AWAY!" : `${multiplier.toFixed(2)}x`,
@@ -379,8 +371,8 @@ export function AviatorGame() {
         );
 
         if (gameState === "CRASHED") {
-          ctx.font = "bold 20px sans-serif";
-          ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+          ctx.font = "bold 18px sans-serif";
+          ctx.fillStyle = "#dc2626";
           ctx.fillText(`Crashed @ ${crashPointRef.current.toFixed(2)}x`, w / 2, h / 2 + 38);
         }
       }
@@ -393,14 +385,14 @@ export function AviatorGame() {
   }, [gameState, multiplier, countdown]);
 
   return (
-    <div className="flex flex-col border border-stone-800 bg-[#0c0d10] text-white">
+    <div className="w-full border border-line bg-panel text-slate-900">
       {/* Top Strip: Brand & Live Multiplier Pills */}
-      <div className="flex items-center justify-between gap-3 border-b border-stone-800 px-4 py-2.5 overflow-x-auto">
+      <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5 overflow-x-auto bg-panel-2">
         <div className="flex items-center gap-2 shrink-0">
-          <span className="flex items-center gap-1.5 text-rose-500 font-black italic text-lg tracking-tighter">
-            <PlaneIcon className="h-5 w-5 text-rose-500" /> Aviator
+          <span className="flex items-center gap-1.5 text-rose-600 font-black italic text-lg tracking-tight">
+            <PlaneIcon className="h-5 w-5 text-rose-600" /> Aviator
           </span>
-          <span className="bg-rose-500/20 text-rose-400 px-2 py-0.5 text-[10px] font-extrabold uppercase">
+          <span className="border border-rose-200 bg-rose-50 text-rose-700 px-2 py-0.5 text-[10px] font-extrabold uppercase">
             97.0% RTP
           </span>
         </div>
@@ -410,9 +402,9 @@ export function AviatorGame() {
           {history.map((m, i) => {
             const isHigh = m >= 10.0;
             const isMid = m >= 2.0;
-            const bg = isHigh ? "bg-[#c2185b]" : isMid ? "bg-[#7b1fa2]" : "bg-[#1976d2]";
+            const bg = isHigh ? "bg-[#c2185b] text-white" : isMid ? "bg-[#7b1fa2] text-white" : "bg-[#1976d2] text-white";
             return (
-              <span key={i} className={`rounded-full px-2.5 py-0.5 text-white ${bg} shrink-0 text-[11px]`}>
+              <span key={i} className={`rounded-full px-2.5 py-0.5 ${bg} shrink-0 text-[11px]`}>
                 {m.toFixed(2)}x
               </span>
             );
@@ -421,40 +413,40 @@ export function AviatorGame() {
       </div>
 
       {/* Main Sportsbook Grid: Left Table + Right Stage */}
-      <div className="grid gap-0 lg:grid-cols-[280px_1fr]">
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] divide-y lg:divide-y-0 lg:divide-x divide-line">
         {/* Left Side: Live Bets Table */}
-        <div className="flex flex-col border-b lg:border-b-0 lg:border-r border-stone-800 bg-[#111217]">
+        <div className="flex flex-col bg-panel">
           {/* Tabs */}
-          <div className="grid grid-cols-3 border-b border-stone-800 text-center text-xs font-bold text-stone-400">
+          <div className="grid grid-cols-3 border-b border-line text-center text-xs font-bold text-mut bg-panel-2">
             <button
               onClick={() => setActiveSidebarTab("all")}
-              className={`py-2 transition ${activeSidebarTab === "all" ? "bg-[#1a1c23] text-white border-b-2 border-rose-500" : "hover:text-white"}`}
+              className={`py-2 transition cursor-pointer ${activeSidebarTab === "all" ? "bg-panel text-slate-900 border-b-2 border-rose-600 font-black" : "hover:text-slate-900"}`}
             >
               All bets
             </button>
             <button
               onClick={() => setActiveSidebarTab("my")}
-              className={`py-2 transition ${activeSidebarTab === "my" ? "bg-[#1a1c23] text-white border-b-2 border-rose-500" : "hover:text-white"}`}
+              className={`py-2 transition cursor-pointer ${activeSidebarTab === "my" ? "bg-panel text-slate-900 border-b-2 border-rose-600 font-black" : "hover:text-slate-900"}`}
             >
               My bets
             </button>
             <button
               onClick={() => setActiveSidebarTab("top")}
-              className={`py-2 transition ${activeSidebarTab === "top" ? "bg-[#1a1c23] text-white border-b-2 border-rose-500" : "hover:text-white"}`}
+              className={`py-2 transition cursor-pointer ${activeSidebarTab === "top" ? "bg-panel text-slate-900 border-b-2 border-rose-600 font-black" : "hover:text-slate-900"}`}
             >
               Top
             </button>
           </div>
 
-          <div className="flex items-center justify-between text-[11px] font-black text-stone-400 px-3 py-1.5 border-b border-stone-800/80 bg-[#0e0f13]">
+          <div className="flex items-center justify-between text-[11px] font-black text-mut px-3 py-1.5 border-b border-line bg-ink">
             <span>ROUND BETS: {players.length + (panel1.active ? 1 : 0) + (panel2.active ? 1 : 0)}</span>
-            <span className="text-[10px] text-emerald-400 flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live
+            <span className="text-[10px] text-emerald-600 flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" /> Live
             </span>
           </div>
 
           {/* Table Header */}
-          <div className="grid grid-cols-[1fr_55px_55px_65px] text-[10px] uppercase font-bold text-stone-500 py-1.5 px-3 border-b border-stone-800/60">
+          <div className="grid grid-cols-[1fr_55px_55px_65px] text-[10px] uppercase font-bold text-mut py-1.5 px-3 border-b border-line bg-panel-2">
             <span>User</span>
             <span>Stake</span>
             <span>Mult</span>
@@ -462,9 +454,9 @@ export function AviatorGame() {
           </div>
 
           {/* Table Rows */}
-          <div className="flex-1 max-h-[360px] overflow-y-auto divide-y divide-stone-800/50 text-xs font-medium">
+          <div className="flex-1 max-h-[360px] overflow-y-auto divide-y divide-line text-xs font-medium">
             {panel1.active && (
-              <div className="grid grid-cols-[1fr_55px_55px_65px] items-center px-3 py-1.5 bg-rose-950/20 text-rose-300">
+              <div className="grid grid-cols-[1fr_55px_55px_65px] items-center px-3 py-1.5 bg-rose-50 text-rose-900">
                 <span className="truncate flex items-center gap-1.5 font-bold text-[11px]">
                   <span className="h-4 w-4 rounded-full bg-rose-600 text-[9px] flex items-center justify-center font-black text-white">Y1</span> You (1)
                 </span>
@@ -476,14 +468,14 @@ export function AviatorGame() {
                     </span>
                   ) : "-"}
                 </span>
-                <span className="text-right font-black text-emerald-400">
+                <span className="text-right font-black text-emerald-600">
                   {panel1.cashedOut ? `+${(panel1.amount * panel1.cashedMultiplier).toFixed(0)}` : "-"}
                 </span>
               </div>
             )}
 
             {panel2.active && (
-              <div className="grid grid-cols-[1fr_55px_55px_65px] items-center px-3 py-1.5 bg-rose-950/20 text-rose-300">
+              <div className="grid grid-cols-[1fr_55px_55px_65px] items-center px-3 py-1.5 bg-rose-50 text-rose-900">
                 <span className="truncate flex items-center gap-1.5 font-bold text-[11px]">
                   <span className="h-4 w-4 rounded-full bg-rose-600 text-[9px] flex items-center justify-center font-black text-white">Y2</span> You (2)
                 </span>
@@ -495,7 +487,7 @@ export function AviatorGame() {
                     </span>
                   ) : "-"}
                 </span>
-                <span className="text-right font-black text-emerald-400">
+                <span className="text-right font-black text-emerald-600">
                   {panel2.cashedOut ? `+${(panel2.amount * panel2.cashedMultiplier).toFixed(0)}` : "-"}
                 </span>
               </div>
@@ -507,26 +499,26 @@ export function AviatorGame() {
                 <div
                   key={idx}
                   className={`grid grid-cols-[1fr_55px_55px_65px] items-center px-3 py-1.5 transition ${
-                    isWon ? "bg-emerald-950/20" : ""
+                    isWon ? "bg-emerald-50/60" : "hover:bg-panel-2"
                   }`}
                 >
-                  <span className="truncate flex items-center gap-1.5 text-stone-300 font-mono text-[11px]">
-                    <span className={`h-4 w-4 rounded-full ${p.avatarBg} text-[9px] flex items-center justify-center font-black text-white`}>
+                  <span className="truncate flex items-center gap-1.5 text-slate-800 font-mono text-[11px]">
+                    <span className={`h-4 w-4 rounded-full ${p.avatarBg} text-[9px] flex items-center justify-center font-black`}>
                       {p.initials}
                     </span>
                     {p.username}
                   </span>
-                  <span className="text-stone-300 text-[11px] font-bold">{p.bet.toFixed(0)}</span>
+                  <span className="text-slate-700 text-[11px] font-bold">{p.bet.toFixed(0)}</span>
                   <span>
                     {isWon ? (
                       <span className="rounded bg-[#1976d2] px-1.5 py-0.5 text-[10px] font-black text-white">
                         {p.cashedAt?.toFixed(2)}x
                       </span>
                     ) : (
-                      <span className="text-stone-600">-</span>
+                      <span className="text-mut-2">-</span>
                     )}
                   </span>
-                  <span className={`text-right font-black text-[11px] ${isWon ? "text-emerald-400" : "text-stone-600"}`}>
+                  <span className={`text-right font-black text-[11px] ${isWon ? "text-emerald-600" : "text-mut-2"}`}>
                     {isWon ? `+${p.profit?.toFixed(0)}` : "-"}
                   </span>
                 </div>
@@ -536,27 +528,27 @@ export function AviatorGame() {
         </div>
 
         {/* Right Side: Flight Arena + Dual Bet Consoles */}
-        <div className="flex flex-col">
+        <div className="flex flex-col bg-panel">
           {/* Canvas Box */}
-          <div className="relative border-b border-stone-800 bg-[#0e0f12]">
+          <div className="relative border-b border-line bg-ink">
             <canvas ref={canvasRef} className="block w-full h-[360px]" />
           </div>
 
           {/* Dual Bet Consoles */}
-          <div className="grid divide-y md:divide-y-0 md:divide-x divide-stone-800 md:grid-cols-2 bg-[#121318]">
+          <div className="grid divide-y md:divide-y-0 md:divide-x divide-line md:grid-cols-2 bg-panel-2">
             {/* Console 1 */}
             <div className="flex flex-col gap-2 p-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center border border-stone-700 bg-[#0c0d10] text-xs font-bold text-stone-400">
+                <div className="flex items-center border border-line bg-panel text-xs font-bold text-mut">
                   <button
                     onClick={() => setPanel1((p) => ({ ...p, mode: "bet" }))}
-                    className={`px-3 py-1 transition ${panel1.mode === "bet" ? "bg-[#252830] text-white" : ""}`}
+                    className={`px-3 py-1 transition cursor-pointer ${panel1.mode === "bet" ? "bg-slate-900 text-white" : ""}`}
                   >
                     Bet
                   </button>
                   <button
                     onClick={() => setPanel1((p) => ({ ...p, mode: "auto" }))}
-                    className={`px-3 py-1 transition ${panel1.mode === "auto" ? "bg-[#252830] text-white" : ""}`}
+                    className={`px-3 py-1 transition cursor-pointer ${panel1.mode === "auto" ? "bg-slate-900 text-white" : ""}`}
                   >
                     Auto
                   </button>
@@ -564,34 +556,34 @@ export function AviatorGame() {
 
                 {panel1.mode === "auto" && (
                   <div className="flex items-center gap-1.5 text-xs font-bold">
-                    <span className="text-stone-400 text-[10px]">Auto Cash:</span>
+                    <span className="text-mut text-[10px]">Auto Cash:</span>
                     <input
                       type="number"
                       step="0.1"
                       min="1.1"
                       value={panel1.autoCashoutValue}
                       onChange={(e) => setPanel1((p) => ({ ...p, autoCashoutValue: parseFloat(e.target.value) || 2.0 }))}
-                      className="w-16 bg-stone-900 border border-stone-700 px-1 py-0.5 text-center text-xs text-white"
+                      className="w-16 bg-panel border border-line px-1 py-0.5 text-center text-xs text-slate-900"
                     />
                     <span>x</span>
                   </div>
                 )}
               </div>
 
-              {/* Amount stepper & Action button */}
+              {/* Stepper & Action button */}
               <div className="grid grid-cols-[130px_1fr] gap-2 items-center">
                 <div className="flex flex-col gap-1">
-                  <div className="flex items-center justify-between border border-stone-700 bg-[#0c0d10] px-2 py-1">
+                  <div className="flex items-center justify-between border border-line bg-panel px-2 py-1">
                     <button
                       onClick={() => setPanel1((p) => ({ ...p, amount: Math.max(10, p.amount - 50) }))}
-                      className="h-6 w-6 bg-stone-800 text-stone-300 font-black text-sm hover:bg-stone-700"
+                      className="h-6 w-6 bg-panel-2 text-slate-800 font-black text-sm hover:bg-line cursor-pointer"
                     >
                       −
                     </button>
-                    <span className="font-black text-xs text-white">{panel1.amount}</span>
+                    <span className="font-black text-xs text-slate-900">{panel1.amount}</span>
                     <button
                       onClick={() => setPanel1((p) => ({ ...p, amount: p.amount + 50 }))}
-                      className="h-6 w-6 bg-stone-800 text-stone-300 font-black text-sm hover:bg-stone-700"
+                      className="h-6 w-6 bg-panel-2 text-slate-800 font-black text-sm hover:bg-line cursor-pointer"
                     >
                       +
                     </button>
@@ -601,7 +593,7 @@ export function AviatorGame() {
                       <button
                         key={amt}
                         onClick={() => setPanel1((p) => ({ ...p, amount: amt }))}
-                        className="border border-stone-700/60 bg-[#1c1e26] py-0.5 text-stone-300 hover:bg-[#252833]"
+                        className="border border-line bg-panel py-0.5 text-slate-800 hover:bg-panel-2 cursor-pointer"
                       >
                         {amt}
                       </button>
@@ -609,7 +601,6 @@ export function AviatorGame() {
                   </div>
                 </div>
 
-                {/* Big Action Button */}
                 {panel1.active && gameState === "FLYING" && !panel1.cashedOut ? (
                   <button
                     onClick={() => cashout(1)}
@@ -619,7 +610,7 @@ export function AviatorGame() {
                     <span className="text-base font-black">{(panel1.amount * multiplier).toFixed(0)} Coins</span>
                   </button>
                 ) : panel1.active && panel1.cashedOut ? (
-                  <div className="h-14 bg-emerald-950/60 border border-emerald-500 flex flex-col items-center justify-center text-center text-emerald-400">
+                  <div className="h-14 bg-emerald-50 border border-emerald-400 flex flex-col items-center justify-center text-center text-emerald-800">
                     <span className="text-[10px] font-bold uppercase">CASHED OUT</span>
                     <span className="text-sm font-black">{(panel1.amount * panel1.cashedMultiplier).toFixed(0)} Coins</span>
                   </div>
@@ -629,8 +620,8 @@ export function AviatorGame() {
                     disabled={panel1.amount > balance}
                     className={`h-14 font-black transition active:scale-98 flex flex-col items-center justify-center cursor-pointer ${
                       panel1.active
-                        ? "bg-rose-600 text-white hover:bg-rose-500"
-                        : "bg-[#28a745] text-white hover:bg-[#218838]"
+                        ? "bg-rose-600 text-white hover:bg-rose-700"
+                        : "bg-emerald-600 text-white hover:bg-emerald-700"
                     } disabled:opacity-50`}
                   >
                     <span className="text-[10px] uppercase tracking-wider">{panel1.active ? "CANCEL" : "BET"}</span>
@@ -643,16 +634,16 @@ export function AviatorGame() {
             {/* Console 2 */}
             <div className="flex flex-col gap-2 p-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center border border-stone-700 bg-[#0c0d10] text-xs font-bold text-stone-400">
+                <div className="flex items-center border border-line bg-panel text-xs font-bold text-mut">
                   <button
                     onClick={() => setPanel2((p) => ({ ...p, mode: "bet" }))}
-                    className={`px-3 py-1 transition ${panel2.mode === "bet" ? "bg-[#252830] text-white" : ""}`}
+                    className={`px-3 py-1 transition cursor-pointer ${panel2.mode === "bet" ? "bg-slate-900 text-white" : ""}`}
                   >
                     Bet
                   </button>
                   <button
                     onClick={() => setPanel2((p) => ({ ...p, mode: "auto" }))}
-                    className={`px-3 py-1 transition ${panel2.mode === "auto" ? "bg-[#252830] text-white" : ""}`}
+                    className={`px-3 py-1 transition cursor-pointer ${panel2.mode === "auto" ? "bg-slate-900 text-white" : ""}`}
                   >
                     Auto
                   </button>
@@ -660,34 +651,34 @@ export function AviatorGame() {
 
                 {panel2.mode === "auto" && (
                   <div className="flex items-center gap-1.5 text-xs font-bold">
-                    <span className="text-stone-400 text-[10px]">Auto Cash:</span>
+                    <span className="text-mut text-[10px]">Auto Cash:</span>
                     <input
                       type="number"
                       step="0.1"
                       min="1.1"
                       value={panel2.autoCashoutValue}
                       onChange={(e) => setPanel2((p) => ({ ...p, autoCashoutValue: parseFloat(e.target.value) || 1.5 }))}
-                      className="w-16 bg-stone-900 border border-stone-700 px-1 py-0.5 text-center text-xs text-white"
+                      className="w-16 bg-panel border border-line px-1 py-0.5 text-center text-xs text-slate-900"
                     />
                     <span>x</span>
                   </div>
                 )}
               </div>
 
-              {/* Amount stepper & Action button */}
+              {/* Stepper & Action button */}
               <div className="grid grid-cols-[130px_1fr] gap-2 items-center">
                 <div className="flex flex-col gap-1">
-                  <div className="flex items-center justify-between border border-stone-700 bg-[#0c0d10] px-2 py-1">
+                  <div className="flex items-center justify-between border border-line bg-panel px-2 py-1">
                     <button
                       onClick={() => setPanel2((p) => ({ ...p, amount: Math.max(10, p.amount - 50) }))}
-                      className="h-6 w-6 bg-stone-800 text-stone-300 font-black text-sm hover:bg-stone-700"
+                      className="h-6 w-6 bg-panel-2 text-slate-800 font-black text-sm hover:bg-line cursor-pointer"
                     >
                       −
                     </button>
-                    <span className="font-black text-xs text-white">{panel2.amount}</span>
+                    <span className="font-black text-xs text-slate-900">{panel2.amount}</span>
                     <button
                       onClick={() => setPanel2((p) => ({ ...p, amount: p.amount + 50 }))}
-                      className="h-6 w-6 bg-stone-800 text-stone-300 font-black text-sm hover:bg-stone-700"
+                      className="h-6 w-6 bg-panel-2 text-slate-800 font-black text-sm hover:bg-line cursor-pointer"
                     >
                       +
                     </button>
@@ -697,7 +688,7 @@ export function AviatorGame() {
                       <button
                         key={amt}
                         onClick={() => setPanel2((p) => ({ ...p, amount: amt }))}
-                        className="border border-stone-700/60 bg-[#1c1e26] py-0.5 text-stone-300 hover:bg-[#252833]"
+                        className="border border-line bg-panel py-0.5 text-slate-800 hover:bg-panel-2 cursor-pointer"
                       >
                         {amt}
                       </button>
@@ -705,7 +696,6 @@ export function AviatorGame() {
                   </div>
                 </div>
 
-                {/* Big Action Button */}
                 {panel2.active && gameState === "FLYING" && !panel2.cashedOut ? (
                   <button
                     onClick={() => cashout(2)}
@@ -715,7 +705,7 @@ export function AviatorGame() {
                     <span className="text-base font-black">{(panel2.amount * multiplier).toFixed(0)} Coins</span>
                   </button>
                 ) : panel2.active && panel2.cashedOut ? (
-                  <div className="h-14 bg-emerald-950/60 border border-emerald-500 flex flex-col items-center justify-center text-center text-emerald-400">
+                  <div className="h-14 bg-emerald-50 border border-emerald-400 flex flex-col items-center justify-center text-center text-emerald-800">
                     <span className="text-[10px] font-bold uppercase">CASHED OUT</span>
                     <span className="text-sm font-black">{(panel2.amount * panel2.cashedMultiplier).toFixed(0)} Coins</span>
                   </div>
@@ -725,8 +715,8 @@ export function AviatorGame() {
                     disabled={panel2.amount > balance}
                     className={`h-14 font-black transition active:scale-98 flex flex-col items-center justify-center cursor-pointer ${
                       panel2.active
-                        ? "bg-rose-600 text-white hover:bg-rose-500"
-                        : "bg-[#28a745] text-white hover:bg-[#218838]"
+                        ? "bg-rose-600 text-white hover:bg-rose-700"
+                        : "bg-emerald-600 text-white hover:bg-emerald-700"
                     } disabled:opacity-50`}
                   >
                     <span className="text-[10px] uppercase tracking-wider">{panel2.active ? "CANCEL" : "BET"}</span>
@@ -740,15 +730,15 @@ export function AviatorGame() {
       </div>
 
       {/* Provably Fair Bottom Strip */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-stone-800 bg-[#090a0d] px-4 py-2 text-[11px] text-stone-400">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line bg-panel-2 px-4 py-2 text-[11px] text-mut">
         <div className="flex items-center gap-2">
-          <ShieldIcon className="h-4 w-4 text-emerald-400" />
-          <span className="font-bold text-stone-300">Provably Fair Round:</span>
-          <span className="font-mono text-[10px] text-stone-500 truncate max-w-[200px] md:max-w-[320px]">{roundSeed}</span>
+          <ShieldIcon className="h-4 w-4 text-emerald-600" />
+          <span className="font-bold text-slate-800">Provably Fair Round:</span>
+          <span className="font-mono text-[10px] text-mut truncate max-w-[200px] md:max-w-[320px]">{roundSeed}</span>
         </div>
         <div className="flex items-center gap-3">
-          <span>RTP: <strong className="text-stone-200">97.0%</strong></span>
-          <span className="text-stone-600">|</span>
+          <span>RTP: <strong className="text-slate-900">97.0%</strong></span>
+          <span className="text-line">|</span>
           <span>Server-Authoritative</span>
         </div>
       </div>

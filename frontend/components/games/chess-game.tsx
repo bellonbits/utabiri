@@ -211,7 +211,6 @@ export function ChessGame() {
       sfx.playTick();
     }
 
-    // Pawn promotion
     if (movingPiece.type === "p" && (toR === 0 || toR === 7)) {
       movingPiece.type = "q";
     }
@@ -233,7 +232,6 @@ export function ChessGame() {
     }
   };
 
-  // AI Response
   useEffect(() => {
     if (turn === "b" && gameStatus === "playing") {
       const timer = setTimeout(() => {
@@ -297,26 +295,26 @@ export function ChessGame() {
   };
 
   return (
-    <div className="flex flex-col border border-stone-800 bg-[#16171b] text-white">
+    <div className="w-full border border-line bg-panel text-slate-900">
       {/* Top Strip */}
-      <div className="flex items-center justify-between gap-3 border-b border-stone-800 px-4 py-2.5 overflow-x-auto bg-[#0f1013]">
+      <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5 overflow-x-auto bg-panel-2">
         <div className="flex items-center gap-2 shrink-0">
-          <span className="flex items-center gap-1.5 text-white font-black text-lg tracking-tight">
-            <CastleIcon className="h-5 w-5 text-amber-500" /> Chess Master
+          <span className="flex items-center gap-1.5 text-slate-900 font-black text-lg tracking-tight">
+            <CastleIcon className="h-5 w-5 text-amber-600" /> Chess Master
           </span>
-          <span className="bg-amber-500/20 text-amber-400 px-2 py-0.5 text-[10px] font-extrabold uppercase">
+          <span className="border border-line bg-panel text-slate-700 px-2 py-0.5 text-[10px] font-extrabold uppercase">
             Stockfish AI v16
           </span>
         </div>
 
         <div className="flex items-center gap-2 text-xs font-bold">
-          <span className="text-stone-400">Difficulty:</span>
+          <span className="text-mut">Difficulty:</span>
           {(["easy", "medium", "hard"] as const).map((d) => (
             <button
               key={d}
               onClick={() => setDifficulty(d)}
               className={`px-2 py-0.5 uppercase text-[10px] border transition cursor-pointer ${
-                difficulty === d ? "border-amber-500 bg-amber-500/20 text-amber-300" : "border-stone-700 bg-stone-900 text-stone-400 hover:text-white"
+                difficulty === d ? "border-accent bg-accent text-white font-black" : "border-line bg-panel text-mut hover:text-slate-900"
               }`}
             >
               {d}
@@ -326,89 +324,89 @@ export function ChessGame() {
       </div>
 
       {/* Main Grid: Review Sidebar (Left) + Chessboard (Right) */}
-      <div className="grid divide-y lg:divide-y-0 lg:divide-x divide-stone-800 lg:grid-cols-[340px_1fr]">
-        {/* Left Side: Game Review & Analysis Panel (matching Screenshot 3) */}
-        <div className="flex flex-col bg-[#111216] p-4 space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] divide-y lg:divide-y-0 lg:divide-x divide-line">
+        {/* Left Side: Game Review & Analysis Panel */}
+        <div className="flex flex-col bg-panel p-4 space-y-4">
           {/* Coach Speech Section */}
-          <div className="flex items-start gap-3 border border-stone-700 bg-[#17181f] p-3">
+          <div className="flex items-start gap-3 border border-line bg-panel-2 p-3">
             <div className="h-10 w-10 shrink-0 bg-amber-500 flex items-center justify-center text-slate-950 font-black">
               <BotIcon className="h-6 w-6 text-slate-950" />
             </div>
             <div className="flex-1">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400 block">Coach Analysis</span>
-              <p className="mt-1 text-xs text-stone-200 leading-snug font-medium">{coachMsg}</p>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 block">Coach Analysis</span>
+              <p className="mt-1 text-xs text-slate-800 leading-snug font-medium">{coachMsg}</p>
             </div>
           </div>
 
           {/* Evaluation Bar */}
-          <div className="border border-stone-800 bg-[#0e0f12] p-3 space-y-1.5">
-            <div className="flex items-center justify-between text-xs font-bold text-stone-400">
+          <div className="border border-line bg-panel-2 p-3 space-y-1.5">
+            <div className="flex items-center justify-between text-xs font-bold text-mut">
               <span>Engine Evaluation</span>
-              <span className={evalScore >= 0 ? "text-emerald-400 font-black" : "text-rose-400 font-black"}>
+              <span className={evalScore >= 0 ? "text-emerald-600 font-black" : "text-rose-600 font-black"}>
                 {evalScore >= 0 ? `+${evalScore.toFixed(1)}` : evalScore.toFixed(1)}
               </span>
             </div>
-            <div className="h-2.5 w-full bg-stone-900 flex">
+            <div className="h-2.5 w-full bg-slate-300 flex">
               <div
-                className="h-full bg-white transition-all duration-300"
+                className="h-full bg-slate-900 transition-all duration-300"
                 style={{ width: `${Math.max(10, Math.min(90, 50 + evalScore * 7))}%` }}
               />
-              <div className="h-full bg-stone-950 flex-1" />
+              <div className="h-full bg-slate-200 flex-1" />
             </div>
           </div>
 
           {/* Accuracy Stats */}
           <div className="grid grid-cols-2 gap-2 text-center">
-            <div className="border border-stone-800 bg-[#16171d] p-2.5">
-              <span className="text-[10px] font-bold uppercase text-stone-400">White (You)</span>
-              <p className="text-xl font-black text-emerald-400">{whiteAccuracy}%</p>
-              <span className="text-[10px] text-stone-500">Accuracy</span>
+            <div className="border border-line bg-panel-2 p-2.5">
+              <span className="text-[10px] font-bold uppercase text-mut">White (You)</span>
+              <p className="text-xl font-black text-emerald-600">{whiteAccuracy}%</p>
+              <span className="text-[10px] text-mut">Accuracy</span>
             </div>
-            <div className="border border-stone-800 bg-[#16171d] p-2.5">
-              <span className="text-[10px] font-bold uppercase text-stone-400">Black (AI)</span>
-              <p className="text-xl font-black text-stone-300">{blackAccuracy}%</p>
-              <span className="text-[10px] text-stone-500">Accuracy</span>
+            <div className="border border-line bg-panel-2 p-2.5">
+              <span className="text-[10px] font-bold uppercase text-mut">Black (AI)</span>
+              <p className="text-xl font-black text-slate-700">{blackAccuracy}%</p>
+              <span className="text-[10px] text-mut">Accuracy</span>
             </div>
           </div>
 
           {/* Move Classification Table */}
-          <div className="border border-stone-800 bg-[#14151b] p-3 space-y-1.5 text-xs">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-400 block mb-2">Move Quality Breakdown</span>
+          <div className="border border-line bg-panel-2 p-3 space-y-1.5 text-xs">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 block mb-2">Move Quality Breakdown</span>
             <div className="flex items-center justify-between py-0.5">
-              <span className="flex items-center gap-2 font-medium">
-                <span className="h-2.5 w-2.5 rounded-full bg-cyan-400 inline-block" /> Brilliant
+              <span className="flex items-center gap-2 font-medium text-slate-800">
+                <span className="h-2.5 w-2.5 rounded-full bg-cyan-500 inline-block" /> Brilliant
               </span>
-              <span className="font-mono font-bold text-cyan-400">{classifications.brilliant}</span>
+              <span className="font-mono font-bold text-cyan-600">{classifications.brilliant}</span>
             </div>
             <div className="flex items-center justify-between py-0.5">
-              <span className="flex items-center gap-2 font-medium">
-                <span className="h-2.5 w-2.5 rounded-full bg-blue-400 inline-block" /> Great
+              <span className="flex items-center gap-2 font-medium text-slate-800">
+                <span className="h-2.5 w-2.5 rounded-full bg-blue-500 inline-block" /> Great
               </span>
-              <span className="font-mono font-bold text-blue-400">{classifications.great}</span>
+              <span className="font-mono font-bold text-blue-600">{classifications.great}</span>
             </div>
             <div className="flex items-center justify-between py-0.5">
-              <span className="flex items-center gap-2 font-medium">
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 inline-block" /> Best
+              <span className="flex items-center gap-2 font-medium text-slate-800">
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block" /> Best
               </span>
-              <span className="font-mono font-bold text-emerald-400">{classifications.best}</span>
+              <span className="font-mono font-bold text-emerald-600">{classifications.best}</span>
             </div>
             <div className="flex items-center justify-between py-0.5">
-              <span className="flex items-center gap-2 font-medium">
-                <span className="h-2.5 w-2.5 rounded-full bg-lime-400 inline-block" /> Excellent
+              <span className="flex items-center gap-2 font-medium text-slate-800">
+                <span className="h-2.5 w-2.5 rounded-full bg-lime-500 inline-block" /> Excellent
               </span>
-              <span className="font-mono font-bold text-lime-400">{classifications.excellent}</span>
+              <span className="font-mono font-bold text-lime-600">{classifications.excellent}</span>
             </div>
             <div className="flex items-center justify-between py-0.5">
-              <span className="flex items-center gap-2 font-medium">
-                <span className="h-2.5 w-2.5 rounded-full bg-amber-400 inline-block" /> Book
+              <span className="flex items-center gap-2 font-medium text-slate-800">
+                <span className="h-2.5 w-2.5 rounded-full bg-amber-500 inline-block" /> Book
               </span>
-              <span className="font-mono font-bold text-amber-400">{classifications.book}</span>
+              <span className="font-mono font-bold text-amber-600">{classifications.book}</span>
             </div>
           </div>
 
           {/* Stake & Rematch */}
-          <div className="border border-stone-800 bg-[#16171d] p-3 space-y-2">
-            <div className="flex items-center justify-between text-[11px] font-bold text-stone-400">
+          <div className="border border-line bg-panel-2 p-3 space-y-2">
+            <div className="flex items-center justify-between text-[11px] font-bold text-mut">
               <span>COIN STAKE:</span>
               <span>{balance.toLocaleString()} Coins Available</span>
             </div>
@@ -419,12 +417,12 @@ export function ChessGame() {
                 step="50"
                 value={wager}
                 onChange={(e) => setWager(Math.max(50, parseInt(e.target.value) || 50))}
-                className="w-full border border-stone-700 bg-stone-900 px-3 py-1.5 text-xs font-bold text-white outline-none"
+                className="w-full border border-line bg-panel px-3 py-1.5 text-xs font-bold text-slate-900 outline-none"
               />
               <button
                 onClick={startWagerMatch}
                 disabled={wager > balance}
-                className="bg-[#81b64c] hover:bg-[#6f9f3f] text-slate-950 px-4 py-1.5 text-xs font-black uppercase transition disabled:opacity-50 cursor-pointer"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 text-xs font-black uppercase transition disabled:opacity-50 cursor-pointer"
               >
                 Stake
               </button>
@@ -433,27 +431,27 @@ export function ChessGame() {
         </div>
 
         {/* Right Side: Chessboard Stage */}
-        <div className="flex flex-col items-center justify-center p-4 md:p-6 bg-[#21201d]">
+        <div className="flex flex-col items-center justify-center p-4 md:p-6 bg-ink">
           {/* Black Player Banner */}
-          <div className="flex w-full max-w-[500px] items-center justify-between pb-2 text-white">
+          <div className="flex w-full max-w-[500px] items-center justify-between pb-2 text-slate-900">
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 bg-stone-700 flex items-center justify-center">
-                <BotIcon className="h-4 w-4 text-stone-300" />
+              <div className="h-7 w-7 bg-panel-2 border border-line flex items-center justify-center">
+                <BotIcon className="h-4 w-4 text-slate-700" />
               </div>
               <div>
-                <p className="text-xs font-black text-stone-200">Utabiri Master (1850)</p>
-                <p className="text-[10px] text-stone-400">Depth 12 Engine</p>
+                <p className="text-xs font-black text-slate-900">Utabiri Master (1850)</p>
+                <p className="text-[10px] text-mut">Depth 12 Engine</p>
               </div>
             </div>
             {turn === "b" && gameStatus === "playing" && (
-              <span className="border border-amber-500/50 bg-amber-500/20 px-2.5 py-0.5 text-xs font-bold text-amber-400 animate-pulse">
+              <span className="border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-800 animate-pulse">
                 Thinking…
               </span>
             )}
           </div>
 
           {/* 8x8 Chessboard */}
-          <div className="relative grid grid-cols-8 border-4 border-[#1b1a17] w-full max-w-[500px] aspect-square select-none">
+          <div className="relative grid grid-cols-8 border-4 border-slate-700 w-full max-w-[500px] aspect-square select-none shadow-sm">
             {board.map((row, r) =>
               row.map((piece, c) => {
                 const isDark = (r + c) % 2 === 1;
@@ -477,7 +475,6 @@ export function ChessGame() {
                     style={{ backgroundColor: bgColor }}
                     className="relative flex items-center justify-center transition-colors cursor-pointer"
                   >
-                    {/* Rank Number */}
                     {c === 0 && (
                       <span
                         className="absolute left-1 top-0.5 text-[10px] font-black pointer-events-none"
@@ -486,7 +483,6 @@ export function ChessGame() {
                         {8 - r}
                       </span>
                     )}
-                    {/* File Letter */}
                     {r === 7 && (
                       <span
                         className="absolute bottom-0.5 right-1 text-[10px] font-black pointer-events-none"
@@ -496,12 +492,10 @@ export function ChessGame() {
                       </span>
                     )}
 
-                    {/* Move Dot */}
                     {isValidDest && !piece && (
                       <span className="absolute h-3.5 w-3.5 rounded-full bg-black/25 pointer-events-none" />
                     )}
 
-                    {/* Capture Ring */}
                     {isValidDest && piece && (
                       <span className="absolute inset-1 rounded-full ring-4 ring-black/25 pointer-events-none" />
                     )}
@@ -514,18 +508,18 @@ export function ChessGame() {
           </div>
 
           {/* White Player Banner */}
-          <div className="flex w-full max-w-[500px] items-center justify-between pt-2 text-white">
+          <div className="flex w-full max-w-[500px] items-center justify-between pt-2 text-slate-900">
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 bg-[#81b64c] flex items-center justify-center">
-                <UserIcon className="h-4 w-4 text-slate-950" />
+              <div className="h-7 w-7 bg-emerald-600 flex items-center justify-center text-white">
+                <UserIcon className="h-4 w-4 text-white" />
               </div>
               <div>
-                <p className="text-xs font-black text-stone-200">You (White)</p>
-                <p className="text-[10px] text-stone-400">{balance.toLocaleString()} Coins</p>
+                <p className="text-xs font-black text-slate-900">You (White)</p>
+                <p className="text-[10px] text-mut">{balance.toLocaleString()} Coins</p>
               </div>
             </div>
             {turn === "w" && gameStatus === "playing" && (
-              <span className="border border-emerald-500/50 bg-emerald-500/20 px-2.5 py-0.5 text-xs font-bold text-emerald-400">
+              <span className="border border-emerald-300 bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
                 Your Turn
               </span>
             )}
