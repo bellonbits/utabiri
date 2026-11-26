@@ -82,7 +82,7 @@ export default function UserProfilePage() {
               </button>
             )}
             {isMe && (
-              <a href="/settings" className="shrink-0 rounded-full border border-line px-5 py-2 text-sm font-semibold text-mut hover:text-white">
+              <a href="/settings" className="shrink-0 rounded-full border border-line px-5 py-2 text-sm font-semibold text-mut hover:text-slate-900">
                 Edit profile
               </a>
             )}

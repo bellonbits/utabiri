@@ -92,7 +92,7 @@ export function TrendPulse({ category }: { category?: string }) {
                 <Link
                   key={t}
                   href={`/pulse?topic=${encodeURIComponent(t)}`}
-                  className="rounded-full border border-line px-2.5 py-0.5 text-[11px] font-bold text-white/85 transition hover:border-accent/60 hover:text-accent-2"
+                  className="rounded-full border border-line px-2.5 py-0.5 text-[11px] font-bold text-slate-800 transition hover:border-accent/60 hover:text-accent-2"
                 >
                   {t}
                 </Link>
@@ -146,7 +146,7 @@ export function TrendPulse({ category }: { category?: string }) {
               <p key={cat} className="flex items-baseline gap-2 text-xs">
                 <span className="w-14 shrink-0 font-bold text-mut">{cat}</span>
                 <span className={`font-extrabold ${s.cls}`}>{s.mark}</span>
-                <span className="min-w-0 flex-1 truncate text-white/80">
+                <span className="min-w-0 flex-1 truncate text-slate-800">
                   {c.trending.slice(0, 2).join(" · ") || c.summary}
                 </span>
               </p>

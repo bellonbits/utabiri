@@ -85,7 +85,7 @@ export function FeaturedCarousel() {
               onClick={() => setIdx(j)}
               aria-label={`Show ${f.title}`}
               className={`h-1.5 rounded-full transition-all ${
-                j === idx % featured.length ? "w-6 bg-white" : "w-1.5 bg-line hover:bg-mut-2"
+                j === idx % featured.length ? "w-6 bg-accent" : "w-1.5 bg-line hover:bg-mut-2"
               }`}
             />
           ))}
@@ -93,14 +93,14 @@ export function FeaturedCarousel() {
         <div className="ml-auto flex items-center gap-2">
           <button
             onClick={() => setIdx((idx - 1 + featured.length) % featured.length)}
-            className="flex items-center gap-1 rounded-full border border-line bg-panel px-4 py-2 text-sm font-bold text-mut transition hover:text-white"
+            className="flex items-center gap-1 rounded-full border border-line bg-panel px-4 py-2 text-sm font-bold text-mut transition hover:border-slate-400 hover:text-slate-900"
           >
             <ChevronRightIcon width={14} height={14} className="rotate-180" />
             {shortTitle(prev.title)}
           </button>
           <button
             onClick={() => setIdx((idx + 1) % featured.length)}
-            className="flex items-center gap-1 rounded-full border border-line bg-panel px-4 py-2 text-sm font-bold text-mut transition hover:text-white"
+            className="flex items-center gap-1 rounded-full border border-line bg-panel px-4 py-2 text-sm font-bold text-mut transition hover:border-slate-400 hover:text-slate-900"
           >
             {shortTitle(next.title)}
             <ChevronRightIcon width={14} height={14} />

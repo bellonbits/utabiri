@@ -31,9 +31,9 @@ export function Navbar() {
     <>
       <header className="sticky top-0 z-40 border-b border-line bg-ink/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-screen-2xl items-center gap-4 px-4">
-          <Link href="/" onClick={close} className="flex items-center gap-2 text-white">
+          <Link href="/" onClick={close} className="flex items-center gap-2 text-slate-900">
             <Image
-              src="/logo-mark-light.png"
+              src="/logo-mark.png"
               alt="Utabiri"
               width={34}
               height={43}
@@ -52,7 +52,7 @@ export function Navbar() {
               <Link
                 key={l.label}
                 href={l.href}
-                className="rounded-md px-3 py-1.5 text-sm font-medium text-mut transition hover:bg-panel hover:text-white"
+                className="rounded-md px-3 py-1.5 text-sm font-medium text-mut transition hover:bg-panel hover:text-slate-900"
               >
                 {l.label}
               </Link>
@@ -82,13 +82,13 @@ export function Navbar() {
             <div className="hidden items-center gap-2 md:flex md:ml-auto lg:ml-0">
               <Link
                 href="/profile"
-                className="max-w-[120px] truncate rounded-lg px-2 py-1.5 text-sm font-semibold text-white hover:bg-panel"
+                className="max-w-[120px] truncate rounded-lg px-2 py-1.5 text-sm font-semibold text-slate-900 hover:bg-panel-2"
               >
                 {user.display_name}
               </Link>
               <button
                 onClick={() => clearSession()}
-                className="rounded-lg px-2 py-1.5 text-sm font-semibold text-mut transition hover:text-white"
+                className="rounded-lg px-2 py-1.5 text-sm font-semibold text-mut transition hover:text-slate-900"
               >
                 Logout
               </button>
@@ -97,13 +97,13 @@ export function Navbar() {
             <div className="hidden items-center gap-2 md:flex md:ml-auto lg:ml-0">
               <Link
                 href="/login"
-                className="rounded-lg px-3 py-1.5 text-sm font-semibold text-mut transition hover:text-white"
+                className="rounded-lg px-3 py-1.5 text-sm font-semibold text-mut transition hover:text-slate-900"
               >
                 Log In
               </Link>
               <Link
                 href="/register"
-                className="rounded-lg bg-gold px-4 py-1.5 text-sm font-bold text-ink transition hover:brightness-110"
+                className="rounded-lg bg-gold px-4 py-1.5 text-sm font-bold text-slate-950 transition hover:brightness-105"
               >
                 Sign Up
               </Link>
@@ -113,7 +113,7 @@ export function Navbar() {
           {/* hamburger */}
           <button
             onClick={() => setMenuOpen((o) => !o)}
-            className="ml-auto rounded-md p-2 text-mut hover:text-white md:ml-0 md:hidden"
+            className="ml-auto rounded-md p-2 text-mut hover:text-slate-900 md:ml-0 md:hidden"
             aria-label="Toggle menu"
           >
             {menuOpen ? <XIcon /> : <MenuIcon />}
@@ -131,11 +131,11 @@ export function Navbar() {
           <div className="absolute inset-x-0 top-0 max-h-[90dvh] overflow-y-auto rounded-b-2xl border-b border-line bg-ink shadow-2xl">
             {/* top bar */}
             <div className="flex h-14 items-center gap-3 px-4">
-              <Link href="/" onClick={close} className="flex items-center gap-2 text-white">
-                <Image src="/logo-mark-light.png" alt="Utabiri" width={28} height={35} className="h-8 w-auto" />
+              <Link href="/" onClick={close} className="flex items-center gap-2 text-slate-900">
+                <Image src="/logo-mark.png" alt="Utabiri" width={28} height={35} className="h-8 w-auto" />
                 <span className="text-xl font-extrabold lowercase tracking-tight">utabiri</span>
               </Link>
-              <button onClick={close} className="ml-auto rounded-md p-2 text-mut hover:text-white">
+              <button onClick={close} className="ml-auto rounded-md p-2 text-mut hover:text-slate-900">
                 <XIcon />
               </button>
             </div>
@@ -147,7 +147,7 @@ export function Navbar() {
                   key={l.label}
                   href={l.href}
                   onClick={close}
-                  className="rounded-xl px-4 py-3.5 text-base font-semibold text-white hover:bg-panel"
+                  className="rounded-xl px-4 py-3.5 text-base font-semibold text-slate-900 hover:bg-panel-2"
                 >
                   {l.label}
                 </Link>
@@ -156,7 +156,7 @@ export function Navbar() {
                 <Link
                   href="/admin"
                   onClick={close}
-                  className="rounded-xl px-4 py-3.5 text-base font-semibold text-gold hover:bg-panel"
+                  className="rounded-xl px-4 py-3.5 text-base font-semibold text-gold hover:bg-panel-2"
                 >
                   Admin
                 </Link>
@@ -179,7 +179,7 @@ export function Navbar() {
                   </div>
                   <button
                     onClick={() => { clearSession(); close(); }}
-                    className="mt-1 w-full rounded-xl border border-line py-3 text-sm font-semibold text-mut hover:text-white"
+                    className="mt-1 w-full rounded-xl border border-line py-3 text-sm font-semibold text-mut hover:text-slate-900"
                   >
                     Logout
                   </button>
@@ -189,14 +189,14 @@ export function Navbar() {
                   <Link
                     href="/login"
                     onClick={close}
-                    className="flex-1 rounded-xl border border-line py-3 text-center text-sm font-semibold hover:bg-panel"
+                    className="flex-1 rounded-xl border border-line py-3 text-center text-sm font-semibold hover:bg-panel-2"
                   >
                     Log In
                   </Link>
                   <Link
                     href="/register"
                     onClick={close}
-                    className="flex-1 rounded-xl bg-gold py-3 text-center text-sm font-bold text-ink"
+                    className="flex-1 rounded-xl bg-gold py-3 text-center text-sm font-bold text-slate-950"
                   >
                     Sign Up
                   </Link>

@@ -28,7 +28,7 @@ export function TopContributors() {
         <h4 className="text-sm font-bold">Top Contributors</h4>
         <a
           href="/leaderboard"
-          className="text-xs font-semibold text-mut hover:text-white"
+          className="text-xs font-semibold text-mut hover:text-slate-900"
         >
           Show all
         </a>

@@ -20,17 +20,17 @@ export function HotTopics() {
   return (
     <div className="flex flex-col gap-3">
       {/* promo card */}
-      <section className="relative overflow-hidden rounded-xl border border-line bg-gradient-to-br from-[#2a1b54] via-[#1c1740] to-panel p-4">
-        <span className="absolute right-3 top-3 rounded-full border border-white/20 px-2 py-0.5 text-[10px] font-bold text-white/70">
+      <section className="relative overflow-hidden rounded-xl border border-blue-200/60 bg-gradient-to-br from-blue-50 via-indigo-50/40 to-panel p-4">
+        <span className="absolute right-3 top-3 rounded-full border border-blue-300/60 bg-white/80 px-2 py-0.5 text-[10px] font-bold text-blue-700">
           Beta
         </span>
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-accent-2">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-accent">
           <SparkIcon width={20} height={20} />
         </span>
-        <h3 className="mt-3 text-lg font-extrabold leading-tight">
+        <h3 className="mt-3 text-lg font-extrabold leading-tight text-slate-900">
           Get personalized advice
         </h3>
-        <p className="mt-1 text-xs text-white/70">
+        <p className="mt-1 text-xs text-slate-600">
           Follow topics like maize or forex for tailored recommendations
         </p>
         <Link

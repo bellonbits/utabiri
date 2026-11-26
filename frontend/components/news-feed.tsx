@@ -73,7 +73,7 @@ export function CarouselNews({ keywords }: { keywords: string }) {
             <span className="font-semibold text-mut">{n.source}</span> ·{" "}
             {timeAgo(n.published)}
           </p>
-          <p className="mt-0.5 line-clamp-2 text-sm font-medium leading-snug text-white/90 group-hover:text-accent-2">
+          <p className="mt-0.5 line-clamp-2 text-sm font-medium leading-snug text-slate-800 group-hover:text-accent-2">
             {n.title}
           </p>
         </a>
@@ -108,8 +108,8 @@ export function NewsPanel() {
             onClick={() => setCat(c)}
             className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition ${
               cat === c
-                ? "bg-white text-ink"
-                : "border border-line text-mut hover:text-white"
+                ? "bg-slate-900 text-white"
+                : "border border-line text-mut hover:text-slate-900"
             }`}
           >
             {c}

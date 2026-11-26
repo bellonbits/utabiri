@@ -31,7 +31,7 @@ export function BottomNav() {
               <Link
                 href={href}
                 className={`flex flex-col items-center gap-1 px-4 py-2.5 text-[10px] font-medium ${
-                  active ? "text-accent-2" : "text-mut-2 hover:text-white"
+                  active ? "text-accent-2" : "text-mut-2 hover:text-slate-900"
                 }`}
               >
                 <Icon width={20} height={20} />

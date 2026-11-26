@@ -26,8 +26,8 @@ export function CategoryTabs() {
             href="/"
             className={`shrink-0 border-b-2 px-3 py-3 text-sm font-medium transition ${
               pathname === "/"
-                ? "border-accent-2 text-white"
-                : "border-transparent text-mut hover:text-white"
+                ? "border-accent-2 text-slate-900 font-semibold"
+                : "border-transparent text-mut hover:text-slate-900"
             }`}
           >
             For You
@@ -38,7 +38,7 @@ export function CategoryTabs() {
               <Link
                 key={c.slug}
                 href={href}
-                className="shrink-0 border-b-2 border-transparent px-3 py-3 text-sm font-medium text-mut transition hover:text-white"
+                className="shrink-0 border-b-2 border-transparent px-3 py-3 text-sm font-medium text-mut transition hover:text-slate-900"
               >
                 {c.label}
               </Link>
@@ -46,10 +46,10 @@ export function CategoryTabs() {
           })}
         </nav>
         <div className="ml-auto hidden shrink-0 items-center gap-4 text-sm text-mut xl:flex">
-          <a href="#" className="hover:text-white">
+          <a href="#" className="hover:text-slate-900">
             Get the App
           </a>
-          <a href="#" className="hover:text-white">
+          <a href="#" className="hover:text-slate-900">
             Help
           </a>
         </div>

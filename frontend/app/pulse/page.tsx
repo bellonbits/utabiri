@@ -142,7 +142,7 @@ function PulseContent() {
   return (
     <>
       {/* topic hero */}
-      <section className="relative overflow-hidden rounded-3xl border border-line bg-gradient-to-br from-[#16223f] via-[#121b2e] to-[#0d1526] p-6 sm:p-8">
+      <section className="relative overflow-hidden rounded-3xl border border-line bg-gradient-to-br from-blue-50/70 via-panel to-slate-50 p-6 sm:p-8">
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-accent/20 blur-3xl" />
         <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-mut">
           <SparkIcon width={14} height={14} className="text-accent-2" />
@@ -177,8 +177,8 @@ function PulseContent() {
               href={`/pulse?topic=${encodeURIComponent(h.topic)}`}
               className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-bold transition ${
                 active
-                  ? "bg-white text-ink"
-                  : "border border-line bg-panel text-mut hover:text-white"
+                  ? "bg-slate-900 text-white"
+                  : "border border-line bg-panel text-mut hover:text-slate-900"
               }`}
             >
               {SENTIMENT[h.sentiment].mark} {h.topic}

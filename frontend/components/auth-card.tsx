@@ -107,7 +107,7 @@ function AuthForms({ initialTab }: { initialTab: "signin" | "signup" }) {
   return (
     <div className="mx-auto w-full max-w-md">
       <div className="flex items-center gap-2">
-        <Image src="/logo-mark-light.png" alt="Utabiri" width={34} height={43} className="h-10 w-auto" />
+        <Image src="/logo-mark.png" alt="Utabiri" width={34} height={43} className="h-10 w-auto" />
         <span className="text-xl font-extrabold lowercase tracking-tight">utabiri</span>
       </div>
 
@@ -137,7 +137,7 @@ function AuthForms({ initialTab }: { initialTab: "signin" | "signup" }) {
               setMsg(null);
             }}
             className={`flex-1 rounded-full py-2.5 text-sm font-bold transition ${
-              tab === key ? "bg-accent text-white" : "text-mut hover:text-white"
+              tab === key ? "bg-accent text-white" : "text-mut hover:text-slate-900"
             }`}
           >
             {label}
@@ -150,7 +150,7 @@ function AuthForms({ initialTab }: { initialTab: "signin" | "signup" }) {
           <>
             <p className="text-sm text-mut">
               Enter the 6-digit code sent to{" "}
-              <span className="font-semibold text-white">{email}</span>
+              <span className="font-semibold text-slate-900">{email}</span>
             </p>
             {devCode && (
               <Notice ok text={`Dev mode — your code is ${devCode}`} />
@@ -206,7 +206,7 @@ function AuthForms({ initialTab }: { initialTab: "signin" | "signup" }) {
               <button
                 type="button"
                 onClick={() => setShowPw(!showPw)}
-                className="shrink-0 text-mut-2 hover:text-white"
+                className="shrink-0 text-mut-2 hover:text-slate-900"
                 aria-label="Toggle password visibility"
               >
                 <EyeIcon width={16} height={16} />

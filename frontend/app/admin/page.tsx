@@ -231,7 +231,7 @@ export default function AdminPage() {
                 Health score, country comparison, sector impact, personal finance, investment ideas and economic-framework commentary. Runs automatically every 24h.
               </p>
             </div>
-            <Link href="/briefing" className="rounded-full border border-line px-5 py-2 text-sm font-bold text-mut hover:text-white">
+            <Link href="/briefing" className="rounded-full border border-line px-5 py-2 text-sm font-bold text-mut hover:text-slate-900">
               View latest
             </Link>
             <button onClick={generateBriefing} disabled={briefingBusy} className="rounded-full bg-accent px-5 py-2 text-sm font-bold text-white transition hover:bg-accent-2 disabled:opacity-50">

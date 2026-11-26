@@ -26,9 +26,9 @@ export function Footer() {
         <div className="grid gap-10 lg:grid-cols-[1.2fr_2fr_1fr_1fr]">
           {/* brand */}
           <div>
-            <Link href="/" className="flex items-center gap-2 text-white">
+            <Link href="/" className="flex items-center gap-2 text-slate-900">
               <Image
-                src="/logo-mark-light.png"
+                src="/logo-mark.png"
                 alt="Utabiri"
                 width={34}
                 height={43}
@@ -59,7 +59,7 @@ export function Footer() {
                     href={`/insights?category=${encodeURIComponent(c.slug)}`}
                     className="group block"
                   >
-                    <span className="text-sm font-semibold text-white/90 group-hover:text-accent-2">
+                    <span className="text-sm font-semibold text-slate-800 group-hover:text-accent-2">
                       {c.label}
                     </span>
                     <span className="block text-xs text-mut-2">
@@ -79,7 +79,7 @@ export function Footer() {
                 <li key={l.label}>
                   <Link
                     href={l.href}
-                    className="text-sm font-medium text-white/85 hover:text-accent-2"
+                    className="text-sm font-medium text-slate-700 hover:text-accent-2"
                   >
                     {l.label}
                   </Link>
@@ -96,7 +96,7 @@ export function Footer() {
                 <li key={l.label}>
                   <a
                     href={l.href}
-                    className="text-sm font-medium text-white/85 hover:text-accent-2"
+                    className="text-sm font-medium text-slate-700 hover:text-accent-2"
                   >
                     {l.label}
                   </a>
@@ -110,15 +110,15 @@ export function Footer() {
         <div className="mt-10 flex flex-wrap items-center gap-x-2 gap-y-2 border-t border-line pt-5 text-xs text-mut">
           <span>© 2026 Utabiri</span>
           <span className="text-mut-2">·</span>
-          <Link href="/privacy" className="hover:text-white">
+          <Link href="/privacy" className="hover:text-slate-900">
             Privacy
           </Link>
           <span className="text-mut-2">·</span>
-          <Link href="/terms" className="hover:text-white">
+          <Link href="/terms" className="hover:text-slate-900">
             Terms of Use
           </Link>
           <span className="text-mut-2">·</span>
-          <a href="mailto:support@utabiri.co.ke" className="hover:text-white">
+          <a href="mailto:support@utabiri.co.ke" className="hover:text-slate-900">
             support@utabiri.co.ke
           </a>
         </div>

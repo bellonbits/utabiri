@@ -50,7 +50,7 @@ export default async function InsightDetailPage({
         </div>
         <h1 className="mt-2 text-2xl font-extrabold tracking-tight">{insight.title}</h1>
         <p className="mt-1 text-xs text-mut-2">{fmtDate(insight.created_at)}</p>
-        <p className="mt-4 whitespace-pre-line text-base leading-relaxed text-white/90">{insight.body}</p>
+        <p className="mt-4 whitespace-pre-line text-base leading-relaxed text-slate-800">{insight.body}</p>
 
         {(insight.related_commodity || insight.related_indicator) && (
           <div className="mt-4 flex flex-wrap gap-2 text-xs">

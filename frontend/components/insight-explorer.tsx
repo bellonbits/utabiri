@@ -53,7 +53,7 @@ export function InsightExplorer() {
           className="w-full bg-transparent text-sm outline-none placeholder:text-mut-2"
         />
         {query && (
-          <button onClick={() => setQuery("")} className="text-xs font-bold text-mut hover:text-white">
+          <button onClick={() => setQuery("")} className="text-xs font-bold text-mut hover:text-slate-900">
             Clear
           </button>
         )}
@@ -65,7 +65,7 @@ export function InsightExplorer() {
             key={c.value}
             onClick={() => setKind(c.value)}
             className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
-              kind === c.value ? "bg-white text-ink" : "border border-line bg-panel text-mut hover:text-white"
+              kind === c.value ? "bg-slate-900 text-white" : "border border-line bg-panel text-mut hover:text-slate-900"
             }`}
           >
             {c.label}
@@ -79,7 +79,7 @@ export function InsightExplorer() {
             key={c}
             onClick={() => setCategory(c)}
             className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
-              category === c ? "bg-accent text-white" : "border border-line bg-panel text-mut hover:text-white"
+              category === c ? "bg-accent text-white" : "border border-line bg-panel text-mut hover:text-slate-900"
             }`}
           >
             {c}

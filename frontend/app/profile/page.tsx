@@ -66,7 +66,7 @@ export default function ProfilePage() {
                 )}
               </div>
             </div>
-            <Link href="/settings" className="shrink-0 rounded-full border border-line px-4 py-1.5 text-sm font-semibold text-mut hover:text-white">
+            <Link href="/settings" className="shrink-0 rounded-full border border-line px-4 py-1.5 text-sm font-semibold text-mut hover:text-slate-900">
               Edit
             </Link>
           </div>
@@ -96,7 +96,7 @@ export default function ProfilePage() {
           <div className="flex flex-wrap gap-2 text-sm">
             {[["Insights", "/insights"], ["Commodities", "/commodities"], ["Macro", "/macro"], ["Leaderboard", "/leaderboard"], ["Settings", "/settings"]].map(
               ([label, href]) => (
-                <a key={href} href={href} className="rounded-full border border-line px-4 py-1.5 font-semibold text-mut transition hover:text-white">
+                <a key={href} href={href} className="rounded-full border border-line px-4 py-1.5 font-semibold text-mut transition hover:text-slate-900">
                   {label}
                 </a>
               )

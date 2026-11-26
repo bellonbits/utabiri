@@ -36,8 +36,8 @@ and get paid out when markets resolve in their favor.
 ## Running locally
 
 ```bash
-# Backend (FastAPI + SQLite, port 8000) — seeds 12 markets + users on first run
-cd backend && .venv/bin/uvicorn app.main:app --port 8000
+# Backend (FastAPI + SQLite, port 8001) — seeds 12 markets + users on first run
+cd backend && .venv/bin/uvicorn app.main:app --port 8001
 
 # Frontend (Next.js, port 3100; uses NEXT_PUBLIC_API_URL from .env.local)
 cd frontend && npm run build && npx next start -p 3100
@@ -61,7 +61,7 @@ cp backend/.env.example backend/.env   # fill in secrets
 NEXT_PUBLIC_API_URL=https://api.utabiri.co.ke docker compose up -d --build
 ```
 
-- `api` (FastAPI) listens on :8000, `web` (Next.js standalone) on :3000 —
+- Host port bindings default to `:8001` for `api` and `:3100` for `web` (overridable via `API_PORT` and `WEB_PORT`), avoiding port collisions with existing services (e.g. port 8000). Internally `api` listens on :8000 and `web` on :3000 —
   put Nginx/Caddy in front for TLS (see [docs/09-deployment.md](docs/09-deployment.md)).
 - SQLite lives in the `api-data` volume; swap `DATABASE_URL` in
   `backend/.env` to Postgres when ready.
