@@ -13,8 +13,10 @@ services:
       context: ./frontend
       args:
         # public URL the *browser* uses to reach the API — baked in at build time,
-        # so rebuild the web image whenever this changes
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8001}
+        # defaults to relative /backend proxy rewrite handled by Next.js
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/backend}
+    environment:
+      - BACKEND_ORIGIN=http://api:8000
     ports:
       - "${WEB_PORT:-3100}:3000"
     depends_on:

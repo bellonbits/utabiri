@@ -2,7 +2,7 @@
 
 /** Thin client for the FastAPI backend. */
 export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001";
+  process.env.NEXT_PUBLIC_API_URL ?? "/backend";
 
 const TOKEN_KEY = "utabiri_token";
 

@@ -7,7 +7,7 @@ export function serverApiUrl(): string {
   const pub = process.env.NEXT_PUBLIC_API_URL ?? "";
   return (
     process.env.BACKEND_ORIGIN ??
-    (pub.startsWith("http") ? pub : "http://localhost:8001")
+    (pub.startsWith("http") ? pub : "http://api:8000")
   );
 }
 
