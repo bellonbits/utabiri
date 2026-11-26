@@ -13,6 +13,7 @@ from .database import Base, SessionFactory, engine
 from .models import User
 from .routers import admin, auth, bills, briefing as briefing_router, commodities, insights, macro, nse, social, sync, trends
 from .security import hash_password
+from .seed import seed_if_empty
 from .services import briefing, kamis
 
 UPLOAD_DIR = Path(os.environ.get("UPLOAD_DIR", "/data/uploads"))
@@ -84,6 +85,7 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
     await _migrate()
     await ensure_admin()
+    await seed_if_empty()
     kamis_task = asyncio.create_task(_kamis_scheduler())
     briefing_task = asyncio.create_task(_briefing_scheduler())
     yield
