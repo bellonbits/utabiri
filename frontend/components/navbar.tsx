@@ -12,6 +12,7 @@ const links = [
   { label: "Commodities", href: "/commodities" },
   { label: "Macro", href: "/macro" },
   { label: "Bills", href: "/bills" },
+  { label: "Games", href: "/games" },
   { label: "Leaderboard", href: "/leaderboard" },
 ];
 

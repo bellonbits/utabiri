@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  GamepadIcon,
   GridIcon,
   HomeIcon,
   MenuIcon,
@@ -13,9 +14,9 @@ import {
 const items = [
   { label: "Home", href: "/", Icon: HomeIcon },
   { label: "Commodities", href: "/commodities", Icon: WheatIcon },
-  { label: "Macro", href: "/macro", Icon: GridIcon },
+  { label: "Games", href: "/games", Icon: GamepadIcon },
   { label: "Insights", href: "/insights", Icon: PulseIcon },
-  { label: "More", href: "/settings", Icon: MenuIcon },
+  { label: "Macro", href: "/macro", Icon: GridIcon },
 ];
 
 export function BottomNav() {
