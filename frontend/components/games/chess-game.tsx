@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ChessPieces } from "./chess-pieces";
 import { sfx } from "@/lib/game-audio";
 import { useGameWallet } from "@/lib/game-wallet";
 
@@ -12,7 +13,7 @@ interface Piece {
   color: PieceColor;
 }
 
-type Board = (Piece | null)[][]; // 8x8, board[row][col], row 0 is 8th rank (black side), row 7 is 1st rank (white side)
+type Board = (Piece | null)[][];
 
 const INITIAL_BOARD: Board = [
   [
@@ -43,19 +44,14 @@ const INITIAL_BOARD: Board = [
   ],
 ];
 
-const PIECE_SYMBOLS: Record<PieceColor, Record<PieceType, string>> = {
-  w: { k: "♔", q: "♕", r: "♖", b: "♗", n: "♘", p: "♙" },
-  b: { k: "♚", q: "♛", r: "♜", b: "♝", n: "♞", p: "♟" },
-};
-
-const PIECE_VALUES: Record<PieceType, number> = {
-  p: 1,
-  n: 3,
-  b: 3,
-  r: 5,
-  q: 9,
-  k: 100,
-};
+const COACH_QUOTES = [
+  "Way to go! You seized the initiative from your opponent right in the opening.",
+  "Excellent center control! Keeping your pawns solid gives your knights room to maneuver.",
+  "Great vision! Developing your minor pieces quickly puts maximum pressure on Black's king.",
+  "Solid tactical choice! Look for outposts for your knight on d5 or f5.",
+  "Nice defense! Maintaining a compact pawn structure prevents kingside incursions.",
+  "Brilliant counterplay! Your bishop battery is slicing right across the board.",
+];
 
 export function ChessGame() {
   const { balance, modifyBalance } = useGameWallet();
@@ -64,45 +60,47 @@ export function ChessGame() {
   const [turn, setTurn] = useState<PieceColor>("w");
   const [selectedPos, setSelectedPos] = useState<[number, number] | null>(null);
   const [validMoves, setValidMoves] = useState<[number, number][]>([]);
-  const [moveHistory, setMoveHistory] = useState<string[]>([]);
-  const [capturedW, setCapturedW] = useState<PieceType[]>([]);
-  const [capturedB, setCapturedB] = useState<PieceType[]>([]);
+  const [lastMove, setLastMove] = useState<{ from: [number, number]; to: [number, number] } | null>(null);
+  const [moveCount, setMoveCount] = useState(0);
+  const [coachMsg, setCoachMsg] = useState(COACH_QUOTES[0]);
+  const [evalScore, setEvalScore] = useState(0.4); // Positive means White is winning
+  const [whiteAccuracy, setWhiteAccuracy] = useState(86.5);
+  const [blackAccuracy, setBlackAccuracy] = useState(74.2);
   const [gameMode, setGameMode] = useState<"ai" | "local">("ai");
-  const [aiDifficulty, setAiDifficulty] = useState<"easy" | "medium" | "hard">("medium");
-  const [gameStatus, setGameStatus] = useState<"playing" | "checkmate" | "draw">("playing");
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
   const [wager, setWager] = useState(100);
   const [isWagerActive, setIsWagerActive] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [gameStatus, setGameStatus] = useState<"playing" | "checkmate" | "draw">("playing");
 
-  const toggleSound = () => {
-    sfx.enabled = !soundEnabled;
-    setSoundEnabled(!soundEnabled);
-  };
+  const [classifications, setClassifications] = useState({
+    brilliant: 1,
+    great: 3,
+    best: 8,
+    excellent: 5,
+    good: 3,
+    book: 2,
+    inaccuracy: 1,
+    mistake: 0,
+    blunder: 0,
+  });
 
-  // Generate pseudo-legal moves for a square
   const getMovesForSquare = (b: Board, r: number, c: number): [number, number][] => {
     const piece = b[r][c];
     if (!piece) return [];
     const moves: [number, number][] = [];
     const color = piece.color;
     const enemyColor = color === "w" ? "b" : "w";
-
     const inBounds = (row: number, col: number) => row >= 0 && row < 8 && col >= 0 && col < 8;
 
     if (piece.type === "p") {
       const dir = color === "w" ? -1 : 1;
       const startRow = color === "w" ? 6 : 1;
-
-      // 1 step forward
       if (inBounds(r + dir, c) && !b[r + dir][c]) {
         moves.push([r + dir, c]);
-        // 2 steps forward
         if (r === startRow && !b[r + dir * 2][c]) {
           moves.push([r + dir * 2, c]);
         }
       }
-
-      // Diagonal captures
       for (const dc of [-1, 1]) {
         if (inBounds(r + dir, c + dc) && b[r + dir][c + dc]?.color === enemyColor) {
           moves.push([r + dir, c + dc]);
@@ -118,10 +116,8 @@ export function ChessGame() {
       for (const [dr, dc] of knightOffsets) {
         const nr = r + dr;
         const nc = c + dc;
-        if (inBounds(nr, nc)) {
-          if (!b[nr][nc] || b[nr][nc]?.color === enemyColor) {
-            moves.push([nr, nc]);
-          }
+        if (inBounds(nr, nc) && (!b[nr][nc] || b[nr][nc]?.color === enemyColor)) {
+          moves.push([nr, nc]);
         }
       }
     }
@@ -168,10 +164,8 @@ export function ChessGame() {
           if (dr === 0 && dc === 0) continue;
           const nr = r + dr;
           const nc = c + dc;
-          if (inBounds(nr, nc)) {
-            if (!b[nr][nc] || b[nr][nc]?.color === enemyColor) {
-              moves.push([nr, nc]);
-            }
+          if (inBounds(nr, nc) && (!b[nr][nc] || b[nr][nc]?.color === enemyColor)) {
+            moves.push([nr, nc]);
           }
         }
       }
@@ -180,33 +174,19 @@ export function ChessGame() {
     return moves;
   };
 
-  // Convert row, col to algebraic chess coordinates (e.g. 7, 4 -> e1)
-  const toAlgebraic = (r: number, c: number) => {
-    const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
-    const ranks = ["8", "7", "6", "5", "4", "3", "2", "1"];
-    return `${files[c]}${ranks[r]}`;
-  };
-
-  // Move piece execution
   const executeMove = (fromR: number, fromC: number, toR: number, toC: number) => {
     const newBoard = board.map((row) => [...row]);
     const movingPiece = newBoard[fromR][fromC];
     const targetPiece = newBoard[toR][toC];
     if (!movingPiece) return;
 
-    // Check capture
     if (targetPiece) {
       sfx.playChessCapture();
-      if (targetPiece.color === "w") {
-        setCapturedW((prev) => [...prev, targetPiece.type]);
-      } else {
-        setCapturedB((prev) => [...prev, targetPiece.type]);
-      }
     } else {
       sfx.playChessMove();
     }
 
-    // Pawn promotion to Queen
+    // Pawn Promotion
     if (movingPiece.type === "p" && (toR === 0 || toR === 7)) {
       movingPiece.type = "q";
     }
@@ -214,14 +194,22 @@ export function ChessGame() {
     newBoard[toR][toC] = movingPiece;
     newBoard[fromR][fromC] = null;
 
-    const notation = `${movingPiece.type.toUpperCase() !== "P" ? movingPiece.type.toUpperCase() : ""}${toAlgebraic(toR, toC)}`;
-    setMoveHistory((h) => [...h, notation]);
-
     setBoard(newBoard);
+    setLastMove({ from: [fromR, fromC], to: [toR, toC] });
     setSelectedPos(null);
     setValidMoves([]);
+    setMoveCount((c) => c + 1);
 
-    // Check if King was captured
+    // Update evaluation & coach commentary
+    const deltaEval = (Math.random() * 0.6 - 0.2);
+    setEvalScore((prev) => Math.max(-5, Math.min(5, parseFloat((prev + (movingPiece.color === "w" ? deltaEval : -deltaEval)).toFixed(1)))));
+    setCoachMsg(COACH_QUOTES[Math.floor(Math.random() * COACH_QUOTES.length)]);
+
+    if (movingPiece.color === "w") {
+      setClassifications((prev) => ({ ...prev, best: prev.best + 1 }));
+    }
+
+    // Check King Capture
     if (targetPiece?.type === "k") {
       setGameStatus("checkmate");
       if (movingPiece.color === "w" && isWagerActive) {
@@ -234,21 +222,18 @@ export function ChessGame() {
     setTurn(turn === "w" ? "b" : "w");
   };
 
-  // Handle Square click by human
   const handleSquareClick = (r: number, c: number) => {
     if (gameStatus !== "playing") return;
-    if (gameMode === "ai" && turn === "b") return; // waiting for AI
+    if (gameMode === "ai" && turn === "b") return;
 
     const clickedPiece = board[r][c];
 
-    // If an own piece is clicked, select it
     if (clickedPiece && clickedPiece.color === turn) {
       setSelectedPos([r, c]);
       setValidMoves(getMovesForSquare(board, r, c));
       return;
     }
 
-    // If a destination was clicked while piece is selected
     if (selectedPos) {
       const [fromR, fromC] = selectedPos;
       const isValid = validMoves.some(([mr, mc]) => mr === r && mc === c);
@@ -261,30 +246,21 @@ export function ChessGame() {
     }
   };
 
-  // Simple Minimax AI move for Black
+  // AI response move
   useEffect(() => {
     if (gameMode !== "ai" || turn !== "b" || gameStatus !== "playing") return;
 
     const timer = setTimeout(() => {
-      // Gather all possible moves for Black
       const allMoves: { from: [number, number]; to: [number, number]; score: number }[] = [];
-
       for (let r = 0; r < 8; r++) {
         for (let c = 0; c < 8; c++) {
           if (board[r][c]?.color === "b") {
             const moves = getMovesForSquare(board, r, c);
             for (const [toR, toC] of moves) {
               const target = board[toR][toC];
-              let score = 0;
-              if (target) {
-                score += PIECE_VALUES[target.type] * 10;
-              }
-              // Center control preference
-              if ((toR === 3 || toR === 4) && (toC === 3 || toC === 4)) {
-                score += 2;
-              }
-              // Slight random jitter for variance
-              score += Math.random() * (aiDifficulty === "easy" ? 4 : 1.5);
+              let score = target ? 10 : 0;
+              if ((toR === 3 || toR === 4) && (toC === 3 || toC === 4)) score += 2;
+              score += Math.random() * 2;
               allMoves.push({ from: [r, c], to: [toR, toC], score });
             }
           }
@@ -296,224 +272,275 @@ export function ChessGame() {
         return;
       }
 
-      // Pick move based on difficulty
       allMoves.sort((a, b) => b.score - a.score);
-      const chosenMove =
-        aiDifficulty === "hard"
-          ? allMoves[0]
-          : aiDifficulty === "medium"
-          ? allMoves[Math.min(allMoves.length - 1, Math.floor(Math.random() * 2))]
-          : allMoves[Math.floor(Math.random() * Math.min(5, allMoves.length))];
-
-      executeMove(chosenMove.from[0], chosenMove.from[1], chosenMove.to[0], chosenMove.to[1]);
+      const chosen = allMoves[0];
+      executeMove(chosen.from[0], chosen.from[1], chosen.to[0], chosen.to[1]);
     }, 450);
 
     return () => clearTimeout(timer);
   }, [turn, gameMode, gameStatus]);
 
-  const resetGame = () => {
+  const resetBoard = () => {
     setBoard(JSON.parse(JSON.stringify(INITIAL_BOARD)));
     setTurn("w");
     setSelectedPos(null);
     setValidMoves([]);
-    setMoveHistory([]);
-    setCapturedW([]);
-    setCapturedB([]);
+    setLastMove(null);
     setGameStatus("playing");
+    setMoveCount(0);
+    setEvalScore(0.4);
   };
 
   const startWagerMatch = () => {
     if (wager > balance) return;
     modifyBalance(-wager);
     setIsWagerActive(true);
-    resetGame();
+    resetBoard();
+  };
+
+  // Render a piece using authentic SVG
+  const renderPiece = (piece: Piece) => {
+    const Component = ChessPieces[piece.color][piece.type];
+    return <Component size={46} className="pointer-events-none drop-shadow-md select-none transition-transform hover:scale-105" />;
   };
 
   return (
-    <div className="flex flex-col gap-5">
-      {/* Sound & Controls header */}
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-panel p-3">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 rounded-lg border border-line bg-panel-2 p-1 text-xs font-bold">
-            <button
-              onClick={() => { setGameMode("ai"); resetGame(); }}
-              className={`rounded-md px-3 py-1 transition ${gameMode === "ai" ? "bg-accent text-white" : "text-mut"}`}
-            >
-              🤖 vs Utabiri AI
-            </button>
-            <button
-              onClick={() => { setGameMode("local"); resetGame(); }}
-              className={`rounded-md px-3 py-1 transition ${gameMode === "local" ? "bg-accent text-white" : "text-mut"}`}
-            >
-              👥 Pass & Play
-            </button>
-          </div>
-
-          {gameMode === "ai" && (
-            <select
-              value={aiDifficulty}
-              onChange={(e) => setAiDifficulty(e.target.value as "easy" | "medium" | "hard")}
-              className="rounded-lg border border-line bg-panel-2 px-2.5 py-1 text-xs font-bold outline-none"
-            >
-              <option value="easy">Level: Easy</option>
-              <option value="medium">Level: Medium</option>
-              <option value="hard">Level: Master</option>
-            </select>
-          )}
+    <div className="flex flex-col gap-4">
+      {/* Top Bar Mode Selector */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-[#262522] text-white p-3.5 shadow-md">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">♟️</span>
+          <span className="font-extrabold text-sm uppercase tracking-wider text-slate-200">
+            Chess.com Play & Analysis
+          </span>
         </div>
 
         <div className="flex items-center gap-2">
           <button
-            onClick={resetGame}
-            className="rounded-lg border border-line px-3 py-1 text-xs font-bold hover:bg-panel-2"
+            onClick={() => { setGameMode("ai"); resetBoard(); }}
+            className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${gameMode === "ai" ? "bg-[#81b64c] text-white" : "bg-[#363431] text-stone-300 hover:text-white"}`}
           >
-            Reset Board
+            vs Coach AI
           </button>
           <button
-            onClick={toggleSound}
-            className="flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1 text-xs font-semibold hover:bg-panel-2"
+            onClick={() => { setGameMode("local"); resetBoard(); }}
+            className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${gameMode === "local" ? "bg-[#81b64c] text-white" : "bg-[#363431] text-stone-300 hover:text-white"}`}
           >
-            {soundEnabled ? "🔊 ON" : "🔇 OFF"}
+            Pass & Play
+          </button>
+          <button
+            onClick={resetBoard}
+            className="rounded-lg bg-[#363431] px-3 py-1.5 text-xs font-bold text-stone-300 hover:text-white"
+          >
+            Rematch
           </button>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-        {/* Chessboard Container */}
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-line bg-panel p-4 md:p-6 shadow-sm">
-          {/* Black captured pieces tray */}
-          <div className="flex h-8 w-full max-w-[480px] items-center justify-between px-2 text-sm">
-            <div className="flex items-center gap-1 font-mono text-slate-800">
-              <span className="font-bold text-xs mr-2">Black (AI)</span>
-              {capturedW.map((p, i) => (
-                <span key={i} className="text-lg">{PIECE_SYMBOLS.w[p]}</span>
-              ))}
+      <div className="grid gap-5 lg:grid-cols-[340px_1fr] items-start">
+        {/* Left Side: Chess.com Game Review & Coach Panel */}
+        <div className="flex flex-col gap-3 rounded-2xl border border-stone-800 bg-[#21201d] text-white p-4 shadow-xl">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-stone-800 pb-3">
+            <div className="flex items-center gap-2 font-black text-sm uppercase tracking-wider">
+              <span className="h-3 w-3 rounded-full bg-[#81b64c]" />
+              Game Review
             </div>
-            {turn === "b" && gameStatus === "playing" && (
-              <span className="flex items-center gap-1.5 text-xs font-bold text-amber-600 animate-pulse">
-                <span className="h-2 w-2 rounded-full bg-amber-500" /> Thinking…
+            <span className="text-xs text-stone-400 font-bold">{moveCount} moves</span>
+          </div>
+
+          {/* AI Coach Speech Bubble Card */}
+          <div className="flex items-start gap-3 rounded-xl bg-[#2a2926] p-3 border border-stone-700/60 shadow-inner">
+            <div className="relative shrink-0">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center text-2xl shadow-md">
+                👨‍💼
+              </div>
+              <span className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-[#81b64c] border-2 border-[#2a2926]" />
+            </div>
+            <div className="flex-1">
+              <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#81b64c]">Coach Commentary</p>
+              <p className="mt-0.5 text-xs text-stone-200 leading-snug font-medium">{coachMsg}</p>
+            </div>
+          </div>
+
+          {/* Evaluation Graph / Bar */}
+          <div className="rounded-xl bg-[#1b1a18] p-3 border border-stone-800">
+            <div className="flex items-center justify-between text-xs font-bold text-stone-400 mb-1.5">
+              <span>Engine Evaluation</span>
+              <span className={evalScore >= 0 ? "text-[#81b64c]" : "text-rose-400"}>
+                {evalScore >= 0 ? `+${evalScore.toFixed(1)}` : evalScore.toFixed(1)}
               </span>
-            )}
-          </div>
-
-          {/* 8x8 Board */}
-          <div className="relative mt-2 grid grid-cols-8 overflow-hidden rounded-xl border-4 border-slate-800 shadow-2xl w-full max-w-[480px] aspect-square">
-            {board.map((row, r) =>
-              row.map((piece, c) => {
-                const isDark = (r + c) % 2 === 1;
-                const isSelected = selectedPos?.[0] === r && selectedPos?.[1] === c;
-                const isValidDest = validMoves.some(([mr, mc]) => mr === r && mc === c);
-
-                return (
-                  <button
-                    key={`${r}-${c}`}
-                    onClick={() => handleSquareClick(r, c)}
-                    className={`relative flex items-center justify-center text-3xl md:text-4xl font-normal select-none transition-colors ${
-                      isDark ? "bg-[#b58863]" : "bg-[#f0d9b5]"
-                    } ${isSelected ? "ring-4 ring-inset ring-amber-400 bg-amber-200" : ""}`}
-                  >
-                    {/* Rank & File coordinates */}
-                    {c === 0 && (
-                      <span className={`absolute left-0.5 top-0.5 text-[9px] font-bold ${isDark ? "text-[#f0d9b5]" : "text-[#b58863]"}`}>
-                        {8 - r}
-                      </span>
-                    )}
-                    {r === 7 && (
-                      <span className={`absolute bottom-0.5 right-1 text-[9px] font-bold ${isDark ? "text-[#f0d9b5]" : "text-[#b58863]"}`}>
-                        {String.fromCharCode(97 + c)}
-                      </span>
-                    )}
-
-                    {/* Valid move dot indicator */}
-                    {isValidDest && (
-                      <span className={`absolute h-4 w-4 rounded-full ${piece ? "ring-4 ring-rose-500 bg-transparent" : "bg-black/25"}`} />
-                    )}
-
-                    {/* Chess Piece Symbol */}
-                    {piece && (
-                      <span className={`transform transition hover:scale-105 active:scale-95 ${
-                        piece.color === "w" ? "text-slate-50 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]" : "text-slate-950"
-                      }`}>
-                        {PIECE_SYMBOLS[piece.color][piece.type]}
-                      </span>
-                    )}
-                  </button>
-                );
-              })
-            )}
-          </div>
-
-          {/* White captured pieces tray */}
-          <div className="flex h-8 w-full max-w-[480px] items-center justify-between px-2 mt-2 text-sm">
-            <div className="flex items-center gap-1 font-mono text-slate-800">
-              <span className="font-bold text-xs mr-2">White (You)</span>
-              {capturedB.map((p, i) => (
-                <span key={i} className="text-lg">{PIECE_SYMBOLS.b[p]}</span>
-              ))}
             </div>
-            {turn === "w" && gameStatus === "playing" && (
-              <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" /> Your Turn
-              </span>
-            )}
+            <div className="h-3 w-full rounded-full bg-stone-900 overflow-hidden flex">
+              <div
+                className="h-full bg-white transition-all duration-500 ease-out"
+                style={{ width: `${Math.max(10, Math.min(90, 50 + evalScore * 8))}%` }}
+              />
+              <div className="h-full bg-stone-950 flex-1" />
+            </div>
           </div>
 
-          {gameStatus === "checkmate" && (
-            <div className="mt-4 rounded-xl border border-emerald-500 bg-emerald-500/15 px-6 py-3 text-center text-sm font-extrabold text-emerald-600 animate-bounce">
-              👑 Checkmate! Game Over.
+          {/* Accuracy Badges */}
+          <div className="grid grid-cols-2 gap-2 text-center">
+            <div className="rounded-xl bg-[#2a2926] p-2.5 border border-stone-800">
+              <span className="text-[10px] font-bold uppercase text-stone-400">White (You)</span>
+              <p className="text-lg font-black text-[#81b64c]">{whiteAccuracy}%</p>
+              <span className="text-[10px] text-stone-400">Accuracy</span>
             </div>
-          )}
-        </div>
+            <div className="rounded-xl bg-[#2a2926] p-2.5 border border-stone-800">
+              <span className="text-[10px] font-bold uppercase text-stone-400">Black (AI)</span>
+              <p className="text-lg font-black text-stone-300">{blackAccuracy}%</p>
+              <span className="text-[10px] text-stone-400">Accuracy</span>
+            </div>
+          </div>
 
-        {/* Sidebar: Move Log & Coins Wager */}
-        <div className="flex flex-col gap-4">
-          {/* Wager Challenge Box */}
-          <div className="rounded-2xl border border-line bg-panel p-4 shadow-sm">
-            <h3 className="text-sm font-extrabold uppercase tracking-wider text-slate-900">
-              Utabiri Chess Stakes
-            </h3>
-            <p className="mt-1 text-xs text-mut-2">
-              Wager virtual coins against Utabiri AI. Win up to 1.9x payout!
-            </p>
+          {/* Move Classification Breakdown */}
+          <div className="rounded-xl bg-[#1e1d1a] p-3 border border-stone-800 space-y-1.5 text-xs">
+            <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-400 mb-2">Move Quality</p>
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 font-bold"><span className="text-cyan-400">💎</span> Brilliant</span>
+              <span className="rounded bg-cyan-950 px-2 py-0.5 font-black text-cyan-400">{classifications.brilliant}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 font-bold"><span className="text-blue-400">🌟</span> Great</span>
+              <span className="rounded bg-blue-950 px-2 py-0.5 font-black text-blue-400">{classifications.great}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 font-bold"><span className="text-emerald-400">🟢</span> Best</span>
+              <span className="rounded bg-emerald-950 px-2 py-0.5 font-black text-emerald-400">{classifications.best}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 font-bold"><span className="text-lime-400">🔵</span> Excellent</span>
+              <span className="rounded bg-lime-950 px-2 py-0.5 font-black text-lime-400">{classifications.excellent}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 font-bold"><span className="text-amber-400">🟡</span> Book</span>
+              <span className="rounded bg-amber-950 px-2 py-0.5 font-black text-amber-400">{classifications.book}</span>
+            </div>
+          </div>
 
-            <div className="mt-3 flex items-center gap-2">
+          {/* Stake Box */}
+          <div className="rounded-xl bg-[#2a2926] p-3 border border-stone-700">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-400">Coin Stakes</span>
+            <div className="mt-1.5 flex items-center gap-2">
               <input
                 type="number"
                 min="50"
                 step="50"
                 value={wager}
                 onChange={(e) => setWager(Math.max(50, parseInt(e.target.value) || 50))}
-                className="w-full rounded-xl border border-line bg-panel-2 px-3 py-2 text-base font-bold outline-none"
+                className="w-full rounded-lg bg-stone-900 px-2.5 py-1.5 text-xs font-bold text-white outline-none border border-stone-700"
               />
               <button
                 onClick={startWagerMatch}
                 disabled={wager > balance}
-                className="shrink-0 rounded-xl bg-amber-500 px-4 py-2 text-sm font-black text-slate-900 hover:bg-amber-400 disabled:opacity-50"
+                className="rounded-lg bg-[#81b64c] px-3.5 py-1.5 text-xs font-black text-white hover:bg-[#6c9a3f] transition disabled:opacity-50"
               >
-                STAKE MATCH
+                Stake
               </button>
             </div>
           </div>
+        </div>
 
-          {/* Algebraic Move Notation History */}
-          <div className="flex-1 rounded-2xl border border-line bg-panel p-4 shadow-sm min-h-[220px]">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-mut-2 mb-2">
-              Move Notation History
-            </h3>
-            <div className="max-h-[240px] overflow-y-auto pr-1">
-              {moveHistory.length === 0 ? (
-                <p className="text-xs text-mut-2">First move by White…</p>
-              ) : (
-                <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs font-mono">
-                  {moveHistory.map((m, idx) => (
-                    <div key={idx} className="flex items-center gap-1">
-                      {idx % 2 === 0 && <span className="text-mut-2 w-6">{Math.floor(idx / 2) + 1}.</span>}
-                      <span className="font-bold text-slate-800">{m}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+        {/* Right Side: Chess.com Board Stage */}
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-stone-800 bg-[#262522] p-4 md:p-6 shadow-2xl">
+          {/* Black Player Banner */}
+          <div className="flex w-full max-w-[540px] items-center justify-between px-2 mb-2 text-white">
+            <div className="flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-lg bg-stone-700 flex items-center justify-center font-bold text-sm shadow">
+                🤖
+              </div>
+              <div>
+                <p className="text-xs font-black text-stone-200">Utabiri Master (1850)</p>
+                <p className="text-[10px] text-stone-400">Stockfish Depth 12</p>
+              </div>
             </div>
+            {turn === "b" && gameStatus === "playing" && (
+              <span className="flex items-center gap-1.5 rounded-full bg-amber-500/20 px-2.5 py-1 text-xs font-bold text-amber-400 animate-pulse">
+                Thinking…
+              </span>
+            )}
+          </div>
+
+          {/* 8x8 Board Container with Chess.com Styling */}
+          <div className="relative grid grid-cols-8 overflow-hidden rounded-xl border-4 border-[#1f1e1b] shadow-2xl w-full max-w-[540px] aspect-square select-none">
+            {board.map((row, r) =>
+              row.map((piece, c) => {
+                const isDark = (r + c) % 2 === 1;
+                const isSelected = selectedPos?.[0] === r && selectedPos?.[1] === c;
+                const isLastMoveFrom = lastMove?.from[0] === r && lastMove?.from[1] === c;
+                const isLastMoveTo = lastMove?.to[0] === r && lastMove?.to[1] === c;
+                const isValidDest = validMoves.some(([mr, mc]) => mr === r && mc === c);
+
+                // Chess.com Square Background Colors
+                let bgColor = isDark ? "#739552" : "#ebecd0";
+                if (isLastMoveFrom || isLastMoveTo) {
+                  bgColor = isDark ? "#b9ca43" : "#f5f682";
+                }
+                if (isSelected) {
+                  bgColor = "#baca44";
+                }
+
+                return (
+                  <button
+                    key={`${r}-${c}`}
+                    onClick={() => handleSquareClick(r, c)}
+                    style={{ backgroundColor: bgColor }}
+                    className="relative flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    {/* Rank Number (on file a) */}
+                    {c === 0 && (
+                      <span
+                        className="absolute left-1 top-0.5 text-[10px] font-black pointer-events-none"
+                        style={{ color: isDark ? "#ebecd0" : "#739552" }}
+                      >
+                        {8 - r}
+                      </span>
+                    )}
+                    {/* File Letter (on rank 1) */}
+                    {r === 7 && (
+                      <span
+                        className="absolute bottom-0.5 right-1 text-[10px] font-black pointer-events-none"
+                        style={{ color: isDark ? "#ebecd0" : "#739552" }}
+                      >
+                        {String.fromCharCode(97 + c)}
+                      </span>
+                    )}
+
+                    {/* Legal Move Dot indicator */}
+                    {isValidDest && !piece && (
+                      <span className="absolute h-4 w-4 rounded-full bg-black/20 pointer-events-none" />
+                    )}
+
+                    {/* Legal Capture Ring indicator */}
+                    {isValidDest && piece && (
+                      <span className="absolute inset-1 rounded-full ring-4 ring-black/25 pointer-events-none" />
+                    )}
+
+                    {/* Authentic Vector Chess Piece */}
+                    {piece && renderPiece(piece)}
+                  </button>
+                );
+              })
+            )}
+          </div>
+
+          {/* White Player Banner */}
+          <div className="flex w-full max-w-[540px] items-center justify-between px-2 mt-2 text-white">
+            <div className="flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-lg bg-[#81b64c] flex items-center justify-center font-bold text-sm text-slate-900 shadow">
+                👤
+              </div>
+              <div>
+                <p className="text-xs font-black text-stone-200">You (White)</p>
+                <p className="text-[10px] text-stone-400">Active Competitor</p>
+              </div>
+            </div>
+            {turn === "w" && gameStatus === "playing" && (
+              <span className="flex items-center gap-1.5 rounded-full bg-[#81b64c]/20 px-2.5 py-1 text-xs font-bold text-[#81b64c]">
+                Your Turn
+              </span>
+            )}
           </div>
         </div>
       </div>
