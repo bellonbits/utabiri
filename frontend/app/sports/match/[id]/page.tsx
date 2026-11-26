@@ -8,7 +8,7 @@ import { Navbar } from "@/components/navbar";
 import { BetslipPanel } from "@/components/sportsbook/betslip-panel";
 import { MobileBetslipTrigger } from "@/components/sportsbook/mobile-betslip-trigger";
 import { SportsSidebar } from "@/components/sportsbook/sports-sidebar";
-import { ChevronDownIcon, ChevronUpIcon, LockIcon } from "@/components/icons";
+import { ChevronDownIcon, ChevronRightIcon, ChevronUpIcon, LockIcon } from "@/components/icons";
 import { api } from "@/lib/api";
 import { useBetslip } from "@/lib/betslip-store";
 
