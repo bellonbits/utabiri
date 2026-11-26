@@ -1,11 +1,5 @@
-"""Receives pre-scraped KAMIS rows from the Vercel-side sync route.
-
-kamis.kilimo.go.ke blocks the backend VPS's datacenter IP at the TCP level
-(confirmed: connections from the VPS time out while general HTTPS egress
-works fine), so the scrape has to happen from somewhere KAMIS doesn't block
-— the frontend's Vercel deployment — which then pushes parsed rows here.
-Authenticated with a shared secret rather than a user JWT since the caller
-is a server-to-server cron job, not a logged-in admin.
+"""Live sync and data ingestion endpoints.
+Fetches real data from KAMIS / UN WFP and synchronizes database state.
 """
 import os
 from datetime import date
@@ -14,6 +8,7 @@ from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel, Field
 
 from ..database import SessionFactory
+from ..live_bootstrap import bootstrap_live_data
 from ..services.kamis import upsert_rows
 
 router = APIRouter(prefix="/sync", tags=["sync"])
@@ -49,3 +44,11 @@ async def sync_kamis_rows(
     async with SessionFactory() as db:
         inserted = await upsert_rows(db, rows)
     return {"rows_received": len(rows), "rows_inserted": inserted}
+
+
+@router.get("/bootstrap")
+@router.post("/bootstrap")
+async def trigger_live_bootstrap():
+    """Trigger live platform data synchronization on demand."""
+    await bootstrap_live_data()
+    return {"status": "ok", "message": "Live platform data synchronization completed"}
