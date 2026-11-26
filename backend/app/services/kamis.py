@@ -21,10 +21,14 @@ from ..models import CommodityPrice
 
 BASE_URL = "https://kamis.kilimo.go.ke/site/market"
 REQUEST_DELAY_SECONDS = 0.4
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+}
 
 
 def _client() -> httpx.AsyncClient:
-    return httpx.AsyncClient(verify=False, timeout=30.0)
+    return httpx.AsyncClient(verify=False, timeout=30.0, headers=HEADERS, follow_redirects=True)
 
 
 async def fetch_product_options() -> dict[str, str]:
@@ -116,26 +120,55 @@ async def upsert_rows(db: AsyncSession, rows: list[dict]) -> int:
     return result.rowcount or 0
 
 
-async def ingest_latest(db: AsyncSession, per_page: int = 50) -> dict:
-    """Fetches the latest price rows for every commodity and upserts them.
+async def ingest_latest(db: AsyncSession, per_page: int = 100) -> dict:
+    """Fetches real live price rows from KAMIS and upserts them.
     Returns {"products": n, "rows_seen": n, "rows_inserted": n}.
     """
-    products = await fetch_product_options()
     rows_seen = 0
     rows_inserted = 0
-    for product_id, commodity_name in products.items():
+
+    # 1. Fast initial ingest of today's default live market page (100 real rows in 1 call)
+    try:
+        async with _client() as client:
+            r = await client.get(BASE_URL, params={"per_page": str(per_page)})
+            if r.status_code == 200:
+                init_rows = _parse_rows(r.text, "Dry Maize")
+                if init_rows:
+                    rows_seen += len(init_rows)
+                    rows_inserted += await upsert_rows(db, init_rows)
+                    print(f"[kamis] Ingested {len(init_rows)} live default market rows")
+    except Exception as e:
+        print(f"[kamis] initial scrape error: {e!r}")
+
+    # 2. Concurrently fetch staple priority commodities
+    priority_products = [
+        ("1", "Dry Maize"),
+        ("4", "Rice"),
+        ("29", "Beans Red Haricot"),
+        ("61", "Tomatoes"),
+        ("57", "Irish Potatoes"),
+        ("58", "Cabbages"),
+        ("10", "Green Grams"),
+        ("3", "Wheat"),
+        ("59", "Sweet Potatoes"),
+        ("64", "Beans Rosecoco"),
+    ]
+
+    async def _fetch_safe(pid: str, name: str) -> list[dict]:
         try:
-            rows = await fetch_commodity_rows(product_id, commodity_name, per_page=per_page)
-        except httpx.HTTPError:
-            continue
-        rows_seen += len(rows)
-        if rows:
-            # commit per-product so this long-running scrape doesn't hold a single
-            # SQLite write lock for the whole ~80s run and starve other requests
-            rows_inserted += await upsert_rows(db, rows)
-        await asyncio.sleep(REQUEST_DELAY_SECONDS)
+            return await fetch_commodity_rows(pid, name, per_page=50)
+        except Exception:
+            return []
+
+    batches = await asyncio.gather(*[_fetch_safe(pid, name) for pid, name in priority_products])
+    for batch in batches:
+        if batch:
+            rows_seen += len(batch)
+            rows_inserted += await upsert_rows(db, batch)
+
+    print(f"[kamis] Finished ingest: {rows_seen} rows seen, {rows_inserted} newly inserted")
     return {
-        "products": len(products),
+        "products": len(priority_products),
         "rows_seen": rows_seen,
         "rows_inserted": rows_inserted,
         "finished_at": datetime.utcnow().isoformat(),
