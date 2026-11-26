@@ -73,7 +73,7 @@ export default function AccountPage() {
           <div className="grid grid-cols-2 gap-4 text-xs">
             <div>
               <span className="text-mut font-semibold">Display Name</span>
-              <p className="font-bold text-slate-900 mt-0.5">{user?.displayName || "Utabiri Player"}</p>
+              <p className="font-bold text-slate-900 mt-0.5">{user?.display_name || "Utabiri Player"}</p>
             </div>
             <div>
               <span className="text-mut font-semibold">Email</span>
