@@ -312,29 +312,10 @@ export const ActivityIcon = (p: P) => (
   </svg>
 );
 
-export const LockIcon = (p: P) => (
-  <svg {...base(p)}>
-    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-  </svg>
-);
-
 export const ClockIcon = (p: P) => (
   <svg {...base(p)}>
     <circle cx="12" cy="12" r="10" />
     <polyline points="12 6 12 12 16 14" />
-  </svg>
-);
-
-export const ChevronRightIcon = (p: P) => (
-  <svg {...base(p)}>
-    <polyline points="9 18 15 12 9 6" />
-  </svg>
-);
-
-export const ChevronDownIcon = (p: P) => (
-  <svg {...base(p)}>
-    <polyline points="6 9 12 15 18 9" />
   </svg>
 );
 
@@ -367,24 +348,6 @@ export const CopyIcon = (p: P) => (
   <svg {...base(p)}>
     <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-  </svg>
-);
-
-export const TrophyIcon = (p: P) => (
-  <svg {...base(p)}>
-    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
-    <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
-    <path d="M4 22h16" />
-    <path d="M10 14.66V17c0 .55-.45 1-1 1H8c-.55 0-1 .45-1 1v1h10v-1c0-.55-.45-1-1-1h-1c-.55 0-1-.45-1-1v-2.34" />
-    <path d="M6 4h12v7a6 6 0 0 1-12 0V4z" />
-  </svg>
-);
-
-export const PercentIcon = (p: P) => (
-  <svg {...base(p)}>
-    <line x1="19" x2="5" y1="5" y2="19" />
-    <circle cx="6.5" cy="6.5" r="2.5" />
-    <circle cx="17.5" cy="17.5" r="2.5" />
   </svg>
 );
 
@@ -529,9 +492,10 @@ export const CrosshairIcon = (p: P) => (
   </svg>
 );
 
-export const EyeIcon = (p: P) => (
+export const UserCheckIcon = (p: P) => (
   <svg {...base(p)}>
-    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-    <circle cx="12" cy="12" r="3" />
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <polyline points="16 11 18 13 22 9" />
   </svg>
 );
