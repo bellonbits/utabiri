@@ -50,10 +50,10 @@ async def trends():
 
     try:
         analysis = await ai.analyze_trends(headlines)
-    except ai.AiError as e:
+    except Exception:
         if _cache["data"]:
             return _cache["data"]
-        raise HTTPException(502, f"AI: {e}")
+        analysis = ai._heuristic_trends(headlines)
 
     data = {
         "generated_at": datetime.now(timezone.utc).isoformat(),

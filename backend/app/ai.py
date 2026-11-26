@@ -1,6 +1,8 @@
 """Groq-backed AI service: turn Kenyan commodity prices, macro indicators,
 and headlines into economic commentary, forecasts, and recommendations.
 Admin-only; the key never leaves the server."""
+from __future__ import annotations
+
 import json
 import os
 from typing import Any
@@ -43,37 +45,84 @@ Rules:
 - Keep topics and phrases short and specific (names, institutions, events)."""
 
 
+def _heuristic_trends(headlines: list[dict[str, str]]) -> dict[str, Any]:
+    """Heuristic fallback for trend analysis when Groq is not configured or fails."""
+    hottest = []
+    categories = ("Politics", "Business", "Sports")
+    by_category: dict[str, Any] = {
+        cat: {
+            "sentiment": "neutral",
+            "trending": [],
+            "summary": f"Latest updates and reporting across {cat.lower()}.",
+        }
+        for cat in categories
+    }
+
+    for i, h in enumerate(headlines[:6]):
+        title = h.get("title", "").strip()
+        cat = h.get("category", "General")
+        if not title:
+            continue
+        words = title.split()
+        topic = " ".join(words[:4]) if len(words) > 4 else title
+        lower = title.lower()
+        if any(w in lower for w in ("gain", "rise", "jump", "rally", "growth", "boost", "win", "high")):
+            sentiment = "positive"
+        elif any(w in lower for w in ("drop", "fall", "loss", "crash", "decline", "crisis", "cut", "low")):
+            sentiment = "negative"
+        else:
+            sentiment = "neutral"
+
+        hottest.append({
+            "topic": topic[:50],
+            "category": cat if cat in ("Politics", "Business", "Sports", "General") else "General",
+            "sentiment": sentiment,
+            "momentum": "rising" if i < 2 else "steady",
+            "summary": title[:200],
+        })
+
+    for h in headlines:
+        cat = h.get("category")
+        title = h.get("title", "").strip()
+        if cat in by_category and title and len(by_category[cat]["trending"]) < 4:
+            words = title.split()
+            short = " ".join(words[:4]) if len(words) > 4 else title
+            by_category[cat]["trending"].append(short[:50])
+
+    return {"hottest": hottest, "by_category": by_category}
+
+
 async def analyze_trends(headlines: list[dict[str, str]]) -> dict[str, Any]:
     """Sentiment + trending topics, overall and per category."""
     if not ENABLED:
-        raise AiError("GROQ_API_KEY not configured")
+        return _heuristic_trends(headlines)
 
     digest = "\n".join(
         f"- [{h.get('category', 'General')}] {h.get('title', '')} ({h.get('source', '')})"
         for h in headlines[:35]
     )
 
-    async with httpx.AsyncClient(timeout=45.0) as client:
-        r = await client.post(
-            "https://api.groq.com/openai/v1/chat/completions",
-            headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
-            json={
-                "model": GROQ_MODEL,
-                "messages": [
-                    {"role": "system", "content": TRENDS_PROMPT},
-                    {"role": "user", "content": f"Today's headlines:\n{digest}"},
-                ],
-                "temperature": 0.3,
-                "max_tokens": 1200,
-                "response_format": {"type": "json_object"},
-            },
-        )
-    if r.status_code >= 400:
-        raise AiError(f"Groq HTTP {r.status_code}: {r.text[:200]}")
     try:
+        async with httpx.AsyncClient(timeout=45.0) as client:
+            r = await client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
+                json={
+                    "model": GROQ_MODEL,
+                    "messages": [
+                        {"role": "system", "content": TRENDS_PROMPT},
+                        {"role": "user", "content": f"Today's headlines:\n{digest}"},
+                    ],
+                    "temperature": 0.3,
+                    "max_tokens": 1200,
+                    "response_format": {"type": "json_object"},
+                },
+            )
+        if r.status_code >= 400:
+            return _heuristic_trends(headlines)
         data = json.loads(r.json()["choices"][0]["message"]["content"])
-    except (json.JSONDecodeError, KeyError, IndexError):
-        raise AiError("Groq returned malformed output")
+    except Exception:
+        return _heuristic_trends(headlines)
 
     sentiments = {"positive", "negative", "neutral"}
     momenta = {"rising", "steady", "cooling"}
