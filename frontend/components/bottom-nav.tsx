@@ -3,44 +3,81 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  ActivityIcon,
+  FileTextIcon,
   GamepadIcon,
-  GridIcon,
   HomeIcon,
-  MenuIcon,
-  PulseIcon,
-  WheatIcon,
+  UserIcon,
 } from "@/components/icons";
-
-const items = [
-  { label: "Home", href: "/", Icon: HomeIcon },
-  { label: "Commodities", href: "/commodities", Icon: WheatIcon },
-  { label: "Games", href: "/games", Icon: GamepadIcon },
-  { label: "Insights", href: "/insights", Icon: PulseIcon },
-  { label: "Macro", href: "/macro", Icon: GridIcon },
-];
+import { useBetslip } from "@/lib/betslip-store";
 
 export function BottomNav() {
   const pathname = usePathname();
+  const { count, toggleDrawer } = useBetslip();
+
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-ink/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-panel pb-[env(safe-area-inset-bottom)] md:hidden">
       <ul className="flex items-stretch justify-around">
-        {items.map(({ label, href, Icon }) => {
-          const active =
-            href === "/" ? pathname === "/" : pathname.startsWith(href);
-          return (
-            <li key={label}>
-              <Link
-                href={href}
-                className={`flex flex-col items-center gap-1 px-4 py-2.5 text-[10px] font-medium ${
-                  active ? "text-accent-2" : "text-mut-2 hover:text-slate-900"
-                }`}
-              >
-                <Icon width={20} height={20} />
-                {label}
-              </Link>
-            </li>
-          );
-        })}
+        <li>
+          <Link
+            href="/sports"
+            className={`flex flex-col items-center gap-1 px-3 py-2 text-[10px] font-bold ${
+              pathname === "/" || pathname.startsWith("/sports") ? "text-accent-2" : "text-mut hover:text-slate-900"
+            }`}
+          >
+            <HomeIcon width={18} height={18} />
+            <span>Home</span>
+          </Link>
+        </li>
+        <li>
+          <Link
+            href="/live"
+            className={`flex flex-col items-center gap-1 px-3 py-2 text-[10px] font-bold ${
+              pathname.startsWith("/live") ? "text-rose-600" : "text-mut hover:text-slate-900"
+            }`}
+          >
+            <ActivityIcon width={18} height={18} className={pathname.startsWith("/live") ? "animate-pulse" : ""} />
+            <span>Live</span>
+          </Link>
+        </li>
+        <li>
+          <Link
+            href="/games"
+            className={`flex flex-col items-center gap-1 px-3 py-2 text-[10px] font-bold ${
+              pathname.startsWith("/games") ? "text-accent-2" : "text-mut hover:text-slate-900"
+            }`}
+          >
+            <GamepadIcon width={18} height={18} />
+            <span>Games</span>
+          </Link>
+        </li>
+        <li>
+          <button
+            onClick={() => toggleDrawer(true)}
+            className="relative flex flex-col items-center gap-1 px-3 py-2 text-[10px] font-bold text-mut hover:text-slate-900"
+          >
+            <div className="relative">
+              <FileTextIcon width={18} height={18} />
+              {count > 0 && (
+                <span className="absolute -top-1 -right-2 rounded-full bg-accent text-white px-1 text-[9px] font-black">
+                  {count}
+                </span>
+              )}
+            </div>
+            <span>Betslip</span>
+          </button>
+        </li>
+        <li>
+          <Link
+            href="/account"
+            className={`flex flex-col items-center gap-1 px-3 py-2 text-[10px] font-bold ${
+              pathname.startsWith("/account") ? "text-accent-2" : "text-mut hover:text-slate-900"
+            }`}
+          >
+            <UserIcon width={18} height={18} />
+            <span>Account</span>
+          </Link>
+        </li>
       </ul>
     </nav>
   );

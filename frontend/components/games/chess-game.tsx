@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ChessPieces } from "./chess-pieces";
 import { sfx } from "@/lib/game-audio";
 import { useGameWallet } from "@/lib/game-wallet";
+import { CastleIcon, BotIcon, UserIcon, TrophyIcon, ShieldIcon, SlidersIcon, CheckCircleIcon } from "@/components/icons";
 
 type PieceColor = "w" | "b";
 type PieceType = "p" | "n" | "b" | "r" | "q" | "k";
@@ -63,10 +64,9 @@ export function ChessGame() {
   const [lastMove, setLastMove] = useState<{ from: [number, number]; to: [number, number] } | null>(null);
   const [moveCount, setMoveCount] = useState(0);
   const [coachMsg, setCoachMsg] = useState(COACH_QUOTES[0]);
-  const [evalScore, setEvalScore] = useState(0.4); // Positive means White is winning
+  const [evalScore, setEvalScore] = useState(0.4);
   const [whiteAccuracy, setWhiteAccuracy] = useState(86.5);
   const [blackAccuracy, setBlackAccuracy] = useState(74.2);
-  const [gameMode, setGameMode] = useState<"ai" | "local">("ai");
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
   const [wager, setWager] = useState(100);
   const [isWagerActive, setIsWagerActive] = useState(false);
@@ -77,7 +77,6 @@ export function ChessGame() {
     great: 3,
     best: 8,
     excellent: 5,
-    good: 3,
     book: 2,
     inaccuracy: 1,
     mistake: 0,
@@ -174,19 +173,45 @@ export function ChessGame() {
     return moves;
   };
 
+  const handleSquareClick = (r: number, c: number) => {
+    if (gameStatus !== "playing") return;
+    if (turn !== "w") return;
+
+    if (selectedPos) {
+      const [sr, sc] = selectedPos;
+      const isLegal = validMoves.some(([mr, mc]) => mr === r && mc === c);
+
+      if (isLegal) {
+        executeMove(sr, sc, r, c);
+        setSelectedPos(null);
+        setValidMoves([]);
+        return;
+      }
+    }
+
+    const clickedPiece = board[r][c];
+    if (clickedPiece && clickedPiece.color === "w") {
+      setSelectedPos([r, c]);
+      setValidMoves(getMovesForSquare(board, r, c));
+    } else {
+      setSelectedPos(null);
+      setValidMoves([]);
+    }
+  };
+
   const executeMove = (fromR: number, fromC: number, toR: number, toC: number) => {
     const newBoard = board.map((row) => [...row]);
     const movingPiece = newBoard[fromR][fromC];
-    const targetPiece = newBoard[toR][toC];
     if (!movingPiece) return;
 
-    if (targetPiece) {
-      sfx.playChessCapture();
+    const captured = newBoard[toR][toC];
+    if (captured) {
+      sfx.playWin();
     } else {
-      sfx.playChessMove();
+      sfx.playTick();
     }
 
-    // Pawn Promotion
+    // Pawn promotion
     if (movingPiece.type === "p" && (toR === 0 || toR === 7)) {
       movingPiece.type = "q";
     }
@@ -196,245 +221,210 @@ export function ChessGame() {
 
     setBoard(newBoard);
     setLastMove({ from: [fromR, fromC], to: [toR, toC] });
-    setSelectedPos(null);
-    setValidMoves([]);
-    setMoveCount((c) => c + 1);
-
-    // Update evaluation & coach commentary
-    const deltaEval = (Math.random() * 0.6 - 0.2);
-    setEvalScore((prev) => Math.max(-5, Math.min(5, parseFloat((prev + (movingPiece.color === "w" ? deltaEval : -deltaEval)).toFixed(1)))));
-    setCoachMsg(COACH_QUOTES[Math.floor(Math.random() * COACH_QUOTES.length)]);
+    setMoveCount((m) => m + 1);
 
     if (movingPiece.color === "w") {
-      setClassifications((prev) => ({ ...prev, best: prev.best + 1 }));
-    }
-
-    // Check King Capture
-    if (targetPiece?.type === "k") {
-      setGameStatus("checkmate");
-      if (movingPiece.color === "w" && isWagerActive) {
-        modifyBalance(Math.round(wager * 1.9));
-        sfx.playWin();
-      }
-      return;
-    }
-
-    setTurn(turn === "w" ? "b" : "w");
-  };
-
-  const handleSquareClick = (r: number, c: number) => {
-    if (gameStatus !== "playing") return;
-    if (gameMode === "ai" && turn === "b") return;
-
-    const clickedPiece = board[r][c];
-
-    if (clickedPiece && clickedPiece.color === turn) {
-      setSelectedPos([r, c]);
-      setValidMoves(getMovesForSquare(board, r, c));
-      return;
-    }
-
-    if (selectedPos) {
-      const [fromR, fromC] = selectedPos;
-      const isValid = validMoves.some(([mr, mc]) => mr === r && mc === c);
-      if (isValid) {
-        executeMove(fromR, fromC, r, c);
-      } else {
-        setSelectedPos(null);
-        setValidMoves([]);
-      }
+      setEvalScore((prev) => Math.min(6.5, prev + 0.35 + (captured ? 1.5 : 0)));
+      setCoachMsg(COACH_QUOTES[Math.floor(Math.random() * COACH_QUOTES.length)]);
+      setTurn("b");
+    } else {
+      setEvalScore((prev) => Math.max(-6.5, prev - 0.2 - (captured ? 1.2 : 0)));
+      setTurn("w");
     }
   };
 
-  // AI response move
+  // AI Response
   useEffect(() => {
-    if (gameMode !== "ai" || turn !== "b" || gameStatus !== "playing") return;
+    if (turn === "b" && gameStatus === "playing") {
+      const timer = setTimeout(() => {
+        const allBlackMoves: { from: [number, number]; to: [number, number]; score: number }[] = [];
 
-    const timer = setTimeout(() => {
-      const allMoves: { from: [number, number]; to: [number, number]; score: number }[] = [];
-      for (let r = 0; r < 8; r++) {
-        for (let c = 0; c < 8; c++) {
-          if (board[r][c]?.color === "b") {
-            const moves = getMovesForSquare(board, r, c);
-            for (const [toR, toC] of moves) {
-              const target = board[toR][toC];
-              let score = target ? 10 : 0;
-              if ((toR === 3 || toR === 4) && (toC === 3 || toC === 4)) score += 2;
-              score += Math.random() * 2;
-              allMoves.push({ from: [r, c], to: [toR, toC], score });
+        for (let r = 0; r < 8; r++) {
+          for (let c = 0; c < 8; c++) {
+            if (board[r][c]?.color === "b") {
+              const moves = getMovesForSquare(board, r, c);
+              for (const [tr, tc] of moves) {
+                let score = 0;
+                const target = board[tr][tc];
+                if (target) {
+                  const valMap: Record<PieceType, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 50 };
+                  score = valMap[target.type] * 10;
+                }
+                score += (tr - r) * 2;
+                allBlackMoves.push({ from: [r, c], to: [tr, tc], score });
+              }
             }
           }
         }
-      }
 
-      if (allMoves.length === 0) {
-        setGameStatus("draw");
-        return;
-      }
+        if (allBlackMoves.length === 0) {
+          setGameStatus("checkmate");
+          if (isWagerActive) {
+            modifyBalance(wager * 2);
+            sfx.playWin();
+          }
+          return;
+        }
 
-      allMoves.sort((a, b) => b.score - a.score);
-      const chosen = allMoves[0];
-      executeMove(chosen.from[0], chosen.from[1], chosen.to[0], chosen.to[1]);
-    }, 450);
+        allBlackMoves.sort((a, b) => b.score - a.score);
+        const bestMove = difficulty === "easy" ? allBlackMoves[Math.floor(Math.random() * allBlackMoves.length)] : allBlackMoves[0];
+        executeMove(bestMove.from[0], bestMove.from[1], bestMove.to[0], bestMove.to[1]);
+      }, 700);
 
-    return () => clearTimeout(timer);
-  }, [turn, gameMode, gameStatus]);
+      return () => clearTimeout(timer);
+    }
+  }, [turn, gameStatus]);
 
-  const resetBoard = () => {
+  const startWagerMatch = () => {
+    if (wager > balance) return;
+    modifyBalance(-wager);
+    setIsWagerActive(true);
     setBoard(JSON.parse(JSON.stringify(INITIAL_BOARD)));
     setTurn("w");
     setSelectedPos(null);
     setValidMoves([]);
     setLastMove(null);
     setGameStatus("playing");
-    setMoveCount(0);
-    setEvalScore(0.4);
+    setEvalScore(0.3);
   };
 
-  const startWagerMatch = () => {
-    if (wager > balance) return;
-    modifyBalance(-wager);
-    setIsWagerActive(true);
-    resetBoard();
-  };
-
-  // Render a piece using authentic SVG
-  const renderPiece = (piece: Piece) => {
-    const Component = ChessPieces[piece.color][piece.type];
-    return <Component size={46} className="pointer-events-none drop-shadow-md select-none transition-transform hover:scale-105" />;
+  const renderPiece = (p: Piece) => {
+    return (
+      <div className="h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center pointer-events-none select-none">
+        <ChessPieces type={p.type} color={p.color} />
+      </div>
+    );
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Top Bar Mode Selector */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-[#262522] text-white p-3.5 shadow-md">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">♟️</span>
-          <span className="font-extrabold text-sm uppercase tracking-wider text-slate-200">
-            Chess.com Play & Analysis
+    <div className="flex flex-col border border-stone-800 bg-[#16171b] text-white">
+      {/* Top Strip */}
+      <div className="flex items-center justify-between gap-3 border-b border-stone-800 px-4 py-2.5 overflow-x-auto bg-[#0f1013]">
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="flex items-center gap-1.5 text-white font-black text-lg tracking-tight">
+            <CastleIcon className="h-5 w-5 text-amber-500" /> Chess Master
+          </span>
+          <span className="bg-amber-500/20 text-amber-400 px-2 py-0.5 text-[10px] font-extrabold uppercase">
+            Stockfish AI v16
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => { setGameMode("ai"); resetBoard(); }}
-            className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${gameMode === "ai" ? "bg-[#81b64c] text-white" : "bg-[#363431] text-stone-300 hover:text-white"}`}
-          >
-            vs Coach AI
-          </button>
-          <button
-            onClick={() => { setGameMode("local"); resetBoard(); }}
-            className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${gameMode === "local" ? "bg-[#81b64c] text-white" : "bg-[#363431] text-stone-300 hover:text-white"}`}
-          >
-            Pass & Play
-          </button>
-          <button
-            onClick={resetBoard}
-            className="rounded-lg bg-[#363431] px-3 py-1.5 text-xs font-bold text-stone-300 hover:text-white"
-          >
-            Rematch
-          </button>
+        <div className="flex items-center gap-2 text-xs font-bold">
+          <span className="text-stone-400">Difficulty:</span>
+          {(["easy", "medium", "hard"] as const).map((d) => (
+            <button
+              key={d}
+              onClick={() => setDifficulty(d)}
+              className={`px-2 py-0.5 uppercase text-[10px] border transition cursor-pointer ${
+                difficulty === d ? "border-amber-500 bg-amber-500/20 text-amber-300" : "border-stone-700 bg-stone-900 text-stone-400 hover:text-white"
+              }`}
+            >
+              {d}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[340px_1fr] items-start">
-        {/* Left Side: Chess.com Game Review & Coach Panel */}
-        <div className="flex flex-col gap-3 rounded-2xl border border-stone-800 bg-[#21201d] text-white p-4 shadow-xl">
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-stone-800 pb-3">
-            <div className="flex items-center gap-2 font-black text-sm uppercase tracking-wider">
-              <span className="h-3 w-3 rounded-full bg-[#81b64c]" />
-              Game Review
-            </div>
-            <span className="text-xs text-stone-400 font-bold">{moveCount} moves</span>
-          </div>
-
-          {/* AI Coach Speech Bubble Card */}
-          <div className="flex items-start gap-3 rounded-xl bg-[#2a2926] p-3 border border-stone-700/60 shadow-inner">
-            <div className="relative shrink-0">
-              <div className="h-12 w-12 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center text-2xl shadow-md">
-                👨‍💼
-              </div>
-              <span className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-[#81b64c] border-2 border-[#2a2926]" />
+      {/* Main Grid: Review Sidebar (Left) + Chessboard (Right) */}
+      <div className="grid divide-y lg:divide-y-0 lg:divide-x divide-stone-800 lg:grid-cols-[340px_1fr]">
+        {/* Left Side: Game Review & Analysis Panel (matching Screenshot 3) */}
+        <div className="flex flex-col bg-[#111216] p-4 space-y-4">
+          {/* Coach Speech Section */}
+          <div className="flex items-start gap-3 border border-stone-700 bg-[#17181f] p-3">
+            <div className="h-10 w-10 shrink-0 bg-amber-500 flex items-center justify-center text-slate-950 font-black">
+              <BotIcon className="h-6 w-6 text-slate-950" />
             </div>
             <div className="flex-1">
-              <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#81b64c]">Coach Commentary</p>
-              <p className="mt-0.5 text-xs text-stone-200 leading-snug font-medium">{coachMsg}</p>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400 block">Coach Analysis</span>
+              <p className="mt-1 text-xs text-stone-200 leading-snug font-medium">{coachMsg}</p>
             </div>
           </div>
 
-          {/* Evaluation Graph / Bar */}
-          <div className="rounded-xl bg-[#1b1a18] p-3 border border-stone-800">
-            <div className="flex items-center justify-between text-xs font-bold text-stone-400 mb-1.5">
+          {/* Evaluation Bar */}
+          <div className="border border-stone-800 bg-[#0e0f12] p-3 space-y-1.5">
+            <div className="flex items-center justify-between text-xs font-bold text-stone-400">
               <span>Engine Evaluation</span>
-              <span className={evalScore >= 0 ? "text-[#81b64c]" : "text-rose-400"}>
+              <span className={evalScore >= 0 ? "text-emerald-400 font-black" : "text-rose-400 font-black"}>
                 {evalScore >= 0 ? `+${evalScore.toFixed(1)}` : evalScore.toFixed(1)}
               </span>
             </div>
-            <div className="h-3 w-full rounded-full bg-stone-900 overflow-hidden flex">
+            <div className="h-2.5 w-full bg-stone-900 flex">
               <div
-                className="h-full bg-white transition-all duration-500 ease-out"
-                style={{ width: `${Math.max(10, Math.min(90, 50 + evalScore * 8))}%` }}
+                className="h-full bg-white transition-all duration-300"
+                style={{ width: `${Math.max(10, Math.min(90, 50 + evalScore * 7))}%` }}
               />
               <div className="h-full bg-stone-950 flex-1" />
             </div>
           </div>
 
-          {/* Accuracy Badges */}
+          {/* Accuracy Stats */}
           <div className="grid grid-cols-2 gap-2 text-center">
-            <div className="rounded-xl bg-[#2a2926] p-2.5 border border-stone-800">
+            <div className="border border-stone-800 bg-[#16171d] p-2.5">
               <span className="text-[10px] font-bold uppercase text-stone-400">White (You)</span>
-              <p className="text-lg font-black text-[#81b64c]">{whiteAccuracy}%</p>
-              <span className="text-[10px] text-stone-400">Accuracy</span>
+              <p className="text-xl font-black text-emerald-400">{whiteAccuracy}%</p>
+              <span className="text-[10px] text-stone-500">Accuracy</span>
             </div>
-            <div className="rounded-xl bg-[#2a2926] p-2.5 border border-stone-800">
+            <div className="border border-stone-800 bg-[#16171d] p-2.5">
               <span className="text-[10px] font-bold uppercase text-stone-400">Black (AI)</span>
-              <p className="text-lg font-black text-stone-300">{blackAccuracy}%</p>
-              <span className="text-[10px] text-stone-400">Accuracy</span>
+              <p className="text-xl font-black text-stone-300">{blackAccuracy}%</p>
+              <span className="text-[10px] text-stone-500">Accuracy</span>
             </div>
           </div>
 
-          {/* Move Classification Breakdown */}
-          <div className="rounded-xl bg-[#1e1d1a] p-3 border border-stone-800 space-y-1.5 text-xs">
-            <p className="text-[10px] font-extrabold uppercase tracking-wider text-stone-400 mb-2">Move Quality</p>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 font-bold"><span className="text-cyan-400">💎</span> Brilliant</span>
-              <span className="rounded bg-cyan-950 px-2 py-0.5 font-black text-cyan-400">{classifications.brilliant}</span>
+          {/* Move Classification Table */}
+          <div className="border border-stone-800 bg-[#14151b] p-3 space-y-1.5 text-xs">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-400 block mb-2">Move Quality Breakdown</span>
+            <div className="flex items-center justify-between py-0.5">
+              <span className="flex items-center gap-2 font-medium">
+                <span className="h-2.5 w-2.5 rounded-full bg-cyan-400 inline-block" /> Brilliant
+              </span>
+              <span className="font-mono font-bold text-cyan-400">{classifications.brilliant}</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 font-bold"><span className="text-blue-400">🌟</span> Great</span>
-              <span className="rounded bg-blue-950 px-2 py-0.5 font-black text-blue-400">{classifications.great}</span>
+            <div className="flex items-center justify-between py-0.5">
+              <span className="flex items-center gap-2 font-medium">
+                <span className="h-2.5 w-2.5 rounded-full bg-blue-400 inline-block" /> Great
+              </span>
+              <span className="font-mono font-bold text-blue-400">{classifications.great}</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 font-bold"><span className="text-emerald-400">🟢</span> Best</span>
-              <span className="rounded bg-emerald-950 px-2 py-0.5 font-black text-emerald-400">{classifications.best}</span>
+            <div className="flex items-center justify-between py-0.5">
+              <span className="flex items-center gap-2 font-medium">
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 inline-block" /> Best
+              </span>
+              <span className="font-mono font-bold text-emerald-400">{classifications.best}</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 font-bold"><span className="text-lime-400">🔵</span> Excellent</span>
-              <span className="rounded bg-lime-950 px-2 py-0.5 font-black text-lime-400">{classifications.excellent}</span>
+            <div className="flex items-center justify-between py-0.5">
+              <span className="flex items-center gap-2 font-medium">
+                <span className="h-2.5 w-2.5 rounded-full bg-lime-400 inline-block" /> Excellent
+              </span>
+              <span className="font-mono font-bold text-lime-400">{classifications.excellent}</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 font-bold"><span className="text-amber-400">🟡</span> Book</span>
-              <span className="rounded bg-amber-950 px-2 py-0.5 font-black text-amber-400">{classifications.book}</span>
+            <div className="flex items-center justify-between py-0.5">
+              <span className="flex items-center gap-2 font-medium">
+                <span className="h-2.5 w-2.5 rounded-full bg-amber-400 inline-block" /> Book
+              </span>
+              <span className="font-mono font-bold text-amber-400">{classifications.book}</span>
             </div>
           </div>
 
-          {/* Stake Box */}
-          <div className="rounded-xl bg-[#2a2926] p-3 border border-stone-700">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-400">Coin Stakes</span>
-            <div className="mt-1.5 flex items-center gap-2">
+          {/* Stake & Rematch */}
+          <div className="border border-stone-800 bg-[#16171d] p-3 space-y-2">
+            <div className="flex items-center justify-between text-[11px] font-bold text-stone-400">
+              <span>COIN STAKE:</span>
+              <span>{balance.toLocaleString()} Coins Available</span>
+            </div>
+            <div className="flex items-center gap-2">
               <input
                 type="number"
                 min="50"
                 step="50"
                 value={wager}
                 onChange={(e) => setWager(Math.max(50, parseInt(e.target.value) || 50))}
-                className="w-full rounded-lg bg-stone-900 px-2.5 py-1.5 text-xs font-bold text-white outline-none border border-stone-700"
+                className="w-full border border-stone-700 bg-stone-900 px-3 py-1.5 text-xs font-bold text-white outline-none"
               />
               <button
                 onClick={startWagerMatch}
                 disabled={wager > balance}
-                className="rounded-lg bg-[#81b64c] px-3.5 py-1.5 text-xs font-black text-white hover:bg-[#6c9a3f] transition disabled:opacity-50"
+                className="bg-[#81b64c] hover:bg-[#6f9f3f] text-slate-950 px-4 py-1.5 text-xs font-black uppercase transition disabled:opacity-50 cursor-pointer"
               >
                 Stake
               </button>
@@ -442,28 +432,28 @@ export function ChessGame() {
           </div>
         </div>
 
-        {/* Right Side: Chess.com Board Stage */}
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-stone-800 bg-[#262522] p-4 md:p-6 shadow-2xl">
+        {/* Right Side: Chessboard Stage */}
+        <div className="flex flex-col items-center justify-center p-4 md:p-6 bg-[#21201d]">
           {/* Black Player Banner */}
-          <div className="flex w-full max-w-[540px] items-center justify-between px-2 mb-2 text-white">
-            <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-lg bg-stone-700 flex items-center justify-center font-bold text-sm shadow">
-                🤖
+          <div className="flex w-full max-w-[500px] items-center justify-between pb-2 text-white">
+            <div className="flex items-center gap-2">
+              <div className="h-7 w-7 bg-stone-700 flex items-center justify-center">
+                <BotIcon className="h-4 w-4 text-stone-300" />
               </div>
               <div>
                 <p className="text-xs font-black text-stone-200">Utabiri Master (1850)</p>
-                <p className="text-[10px] text-stone-400">Stockfish Depth 12</p>
+                <p className="text-[10px] text-stone-400">Depth 12 Engine</p>
               </div>
             </div>
             {turn === "b" && gameStatus === "playing" && (
-              <span className="flex items-center gap-1.5 rounded-full bg-amber-500/20 px-2.5 py-1 text-xs font-bold text-amber-400 animate-pulse">
+              <span className="border border-amber-500/50 bg-amber-500/20 px-2.5 py-0.5 text-xs font-bold text-amber-400 animate-pulse">
                 Thinking…
               </span>
             )}
           </div>
 
-          {/* 8x8 Board Container with Chess.com Styling */}
-          <div className="relative grid grid-cols-8 overflow-hidden rounded-xl border-4 border-[#1f1e1b] shadow-2xl w-full max-w-[540px] aspect-square select-none">
+          {/* 8x8 Chessboard */}
+          <div className="relative grid grid-cols-8 border-4 border-[#1b1a17] w-full max-w-[500px] aspect-square select-none">
             {board.map((row, r) =>
               row.map((piece, c) => {
                 const isDark = (r + c) % 2 === 1;
@@ -472,7 +462,6 @@ export function ChessGame() {
                 const isLastMoveTo = lastMove?.to[0] === r && lastMove?.to[1] === c;
                 const isValidDest = validMoves.some(([mr, mc]) => mr === r && mc === c);
 
-                // Chess.com Square Background Colors
                 let bgColor = isDark ? "#739552" : "#ebecd0";
                 if (isLastMoveFrom || isLastMoveTo) {
                   bgColor = isDark ? "#b9ca43" : "#f5f682";
@@ -488,7 +477,7 @@ export function ChessGame() {
                     style={{ backgroundColor: bgColor }}
                     className="relative flex items-center justify-center transition-colors cursor-pointer"
                   >
-                    {/* Rank Number (on file a) */}
+                    {/* Rank Number */}
                     {c === 0 && (
                       <span
                         className="absolute left-1 top-0.5 text-[10px] font-black pointer-events-none"
@@ -497,7 +486,7 @@ export function ChessGame() {
                         {8 - r}
                       </span>
                     )}
-                    {/* File Letter (on rank 1) */}
+                    {/* File Letter */}
                     {r === 7 && (
                       <span
                         className="absolute bottom-0.5 right-1 text-[10px] font-black pointer-events-none"
@@ -507,17 +496,16 @@ export function ChessGame() {
                       </span>
                     )}
 
-                    {/* Legal Move Dot indicator */}
+                    {/* Move Dot */}
                     {isValidDest && !piece && (
-                      <span className="absolute h-4 w-4 rounded-full bg-black/20 pointer-events-none" />
+                      <span className="absolute h-3.5 w-3.5 rounded-full bg-black/25 pointer-events-none" />
                     )}
 
-                    {/* Legal Capture Ring indicator */}
+                    {/* Capture Ring */}
                     {isValidDest && piece && (
                       <span className="absolute inset-1 rounded-full ring-4 ring-black/25 pointer-events-none" />
                     )}
 
-                    {/* Authentic Vector Chess Piece */}
                     {piece && renderPiece(piece)}
                   </button>
                 );
@@ -526,18 +514,18 @@ export function ChessGame() {
           </div>
 
           {/* White Player Banner */}
-          <div className="flex w-full max-w-[540px] items-center justify-between px-2 mt-2 text-white">
-            <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-lg bg-[#81b64c] flex items-center justify-center font-bold text-sm text-slate-900 shadow">
-                👤
+          <div className="flex w-full max-w-[500px] items-center justify-between pt-2 text-white">
+            <div className="flex items-center gap-2">
+              <div className="h-7 w-7 bg-[#81b64c] flex items-center justify-center">
+                <UserIcon className="h-4 w-4 text-slate-950" />
               </div>
               <div>
                 <p className="text-xs font-black text-stone-200">You (White)</p>
-                <p className="text-[10px] text-stone-400">Active Competitor</p>
+                <p className="text-[10px] text-stone-400">{balance.toLocaleString()} Coins</p>
               </div>
             </div>
             {turn === "w" && gameStatus === "playing" && (
-              <span className="flex items-center gap-1.5 rounded-full bg-[#81b64c]/20 px-2.5 py-1 text-xs font-bold text-[#81b64c]">
+              <span className="border border-emerald-500/50 bg-emerald-500/20 px-2.5 py-0.5 text-xs font-bold text-emerald-400">
                 Your Turn
               </span>
             )}

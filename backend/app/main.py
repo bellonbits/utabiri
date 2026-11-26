@@ -11,7 +11,25 @@ from sqlalchemy import select, text
 from . import ai
 from .database import Base, SessionFactory, engine
 from .models import User
-from .routers import admin, auth, bills, briefing as briefing_router, commodities, games, insights, macro, nse, social, sync, trends
+from .routers import (
+    admin,
+    admin_sportsbook,
+    auth,
+    bets,
+    bills,
+    briefing as briefing_router,
+    commodities,
+    games,
+    insights,
+    macro,
+    nse,
+    predictor,
+    social,
+    sports,
+    sync,
+    trends,
+    wallet,
+)
 from .security import hash_password
 from .live_bootstrap import bootstrap_live_data
 from .services import briefing, kamis
@@ -105,9 +123,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-for r in (auth.router, commodities.router, macro.router, insights.router,
-          trends.router, nse.router, admin.router, social.router,
-          briefing_router.router, bills.router, sync.router, games.router):
+for r in (
+    auth.router,
+    commodities.router,
+    macro.router,
+    insights.router,
+    trends.router,
+    nse.router,
+    admin.router,
+    admin_sportsbook.router,
+    social.router,
+    briefing_router.router,
+    bills.router,
+    sync.router,
+    games.router,
+    sports.router,
+    bets.router,
+    wallet.router,
+    predictor.router,
+):
     app.include_router(r)
 
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
